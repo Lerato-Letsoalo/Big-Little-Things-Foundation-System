@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Us — Big Little Things Foundation</title>
+  <link rel="icon" href="public/images/logo.png" type="image/png">
+  <link rel="stylesheet" href="public/css/main.css">
+  <style>
+    body { padding-top: var(--nav-h); }
+    .about-hero { background: var(--black); padding: 100px 0 80px; position: relative; overflow: hidden; }
+    .about-hero::before { content:''; position:absolute; inset:0; background:url('public/images/gallery/second-drive-2022/drive2-01.jpeg') center/cover; opacity:0.18; }
+    .about-hero::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg,rgba(13,13,13,0.95) 40%,rgba(13,13,13,0.4)); }
+    .about-hero .container { position:relative;z-index:1; }
+    .about-hero h1 { color:var(--white); max-width:600px; }
+    .about-hero p { color:rgba(255,255,255,0.6); max-width:520px; margin-top:16px; font-size:1.0625rem; }
+
+    /* Story Timeline */
+    .story-section { padding: 96px 0; }
+    .story-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+    .story-text .section-label { margin-bottom: 16px; }
+    .timeline { margin-top: 48px; }
+    .timeline-item { display: flex; gap: 20px; padding-bottom: 32px; position: relative; }
+    .timeline-item:not(:last-child)::before { content:''; position:absolute; left:19px; top:40px; bottom:0; width:2px; background:var(--gray-200); }
+    .timeline-dot { width: 40px; height: 40px; border-radius: 50%; background: var(--red); color: var(--white); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem; flex-shrink:0; z-index:1; }
+    .timeline-content { padding-top: 8px; }
+    .timeline-year { font-size:0.78rem; font-weight:700; color:var(--red); letter-spacing:0.1em; margin-bottom:4px; }
+    .timeline-title { font-family:var(--font-display); font-size:1.05rem; font-weight:700; color:var(--black); margin-bottom:6px; }
+    .timeline-desc { font-size:0.875rem; color:var(--gray-700); line-height:1.65; }
+    .story-visual { position:relative; }
+    .story-img-stack { position:relative; height:520px; }
+    .story-img { position:absolute; border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); background-size:cover!important; background-position:center!important; }
+    .story-img-1 { inset:0 40px 80px 0; }
+    .story-img-2 { width:220px; height:200px; bottom:0; right:0; border:4px solid var(--white); z-index:2; }
+    .story-badge { position:absolute; top:20px; left:-16px; z-index:3; background:var(--black); color:var(--white); padding:16px 20px; border-radius:var(--radius); border-left:4px solid var(--red); }
+    .story-badge-num { font-family:var(--font-display); font-size:1.8rem; font-weight:900; color:var(--red); line-height:1; }
+    .story-badge-text { font-size:0.72rem; color:rgba(255,255,255,0.5); letter-spacing:0.08em; text-transform:uppercase; margin-top:2px; }
+
+    /* Mission/Vision */
+    .mv-section { background:var(--black); padding:96px 0; }
+    .mv-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:32px; margin-top:56px; }
+    .mv-card { border-radius:var(--radius-lg); padding:40px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); }
+    .mv-card__icon { font-size:2.8rem; margin-bottom:20px; }
+    .mv-card h3 { color:var(--white); margin-bottom:14px; font-size:1.25rem; }
+    .mv-card p { color:rgba(255,255,255,0.55); line-height:1.75; }
+    .mv-card.featured { background:var(--red); border-color:var(--red); }
+    .mv-card.featured h3 { color:var(--white); }
+    .mv-card.featured p { color:rgba(255,255,255,0.85); }
+
+    /* Values */
+    .values-section { padding:96px 0; }
+    .values-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:24px; margin-top:56px; }
+    .value-card { text-align:center; padding:32px 20px; border-radius:var(--radius-lg); border:1px solid var(--gray-200); background:var(--white); transition:var(--transition); }
+    .value-card:hover { border-color:var(--red); box-shadow:var(--shadow-md); transform:translateY(-4px); }
+    .value-card__icon { font-size:2.4rem; margin-bottom:16px; }
+    .value-card h3 { font-size:1rem; margin-bottom:10px; }
+    .value-card p { font-size:0.875rem; }
+
+    /* Team */
+    .team-section { padding:96px 0; background:var(--gray-100); }
+    .team-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:32px; margin-top:56px; }
+    .team-card { background:var(--white); border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow-sm); transition:var(--transition); }
+    .team-card:hover { box-shadow:var(--shadow-lg); transform:translateY(-6px); }
+    .team-card__img { height:280px; position:relative; }
+    .team-card__img--icon { display:flex; align-items:center; justify-content:center; background:var(--gray-100); color:var(--red); }
+    .team-card__img--icon .icon svg { width:72px; height:72px; stroke-width:1.5; }
+    .team-card__body { padding:28px; }
+    .team-card__name { font-family:var(--font-display); font-size:1.25rem; font-weight:700; color:var(--black); }
+    .team-card__role { font-size:0.82rem; color:var(--red); font-weight:700; letter-spacing:0.06em; text-transform:uppercase; margin:6px 0 14px; }
+    .team-card__bio { font-size:0.875rem; color:var(--gray-700); line-height:1.7; }
+    .team-card__social { display:flex; gap:8px; margin-top:18px; }
+    .social-chip { padding:5px 14px; border-radius:99px; border:1px solid var(--gray-200); font-size:0.78rem; font-weight:600; color:var(--gray-700); background:var(--gray-100); transition:var(--transition); }
+    .social-chip:hover { background:var(--red); color:var(--white); border-color:var(--red); }
+
+    /* Partners */
+    .partners-section { padding:64px 0; border-top:1px solid var(--gray-200); }
+    .partners-bar { display:flex; align-items:center; justify-content:center; gap:48px; flex-wrap:wrap; margin-top:40px; }
+    .partner-logo { font-family:var(--font-display); font-size:1.2rem; font-weight:700; color:var(--gray-400); transition:var(--transition); }
+    .partner-logo:hover { color:var(--red); }
+
+    @media(max-width:1024px){ .mv-grid{grid-template-columns:1fr 1fr} }
+    @media(max-width:768px){ .story-grid{grid-template-columns:1fr} .story-img-stack{height:280px} .team-grid{grid-template-columns:1fr} .mv-grid{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="container nav__inner">
+    <a href="index.html" class="nav__logo"><img src="public/images/logo.png" alt="Big Little Things Foundation" class="nav__logo-img"></a>
+    <ul class="nav__links">
+      <li><a href="index.html">Home</a></li><li><a href="about.html" class="active">About</a></li>
+      <li><a href="projects.html">Projects</a></li><li><a href="volunteer.html">Volunteer</a></li>
+      <li><a href="gallery.html">Gallery</a></li><li><a href="contact.html">Contact</a></li>
+    </ul>
+    <div class="nav__cta">
+      <a href="login.html" class="btn btn-outline btn-sm">Login</a>
+      <a href="donate.html" class="btn btn-primary btn-sm">Donate Now</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="about-hero">
+  <div class="container">
+    <span class="section-label" style="color:rgba(255,255,255,0.45)">Our Story</span>
+    <h1 class="animate-up">We Believe in the Power of Small Acts</h1>
+    <p class="animate-up delay-1">Established in 2021 by Iman Cassiem, Chloe Grotewold and Lehlohonolo Mgedeza, Big Little Things Foundation began with a simple intention: to uplift those in need, starting with something as essential as sanitary care.</p>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:32px" class="animate-up delay-2">
+      <a href="volunteer.html" class="btn btn-primary btn-lg">Join Our Team</a>
+      <a href="contact.html" class="btn btn-outline btn-lg">Get in Touch</a>
+    </div>
+  </div>
+</section>
+
+<!-- STORY + TIMELINE -->
+<section class="story-section">
+  <div class="container">
+    <div class="story-grid">
+      <div class="story-text reveal">
+        <span class="section-label">How It All Began</span>
+        <h2 class="section-heading">A Small Idea That Grew Into a Movement</h2>
+        <p>In 2021, we held our first outreach drive — distributing sanitary towels to young girls in Gauteng and the Free State. Our goal was modest, but the response was overwhelming. We exceeded our expectations threefold, and in doing so, realised the power of collective action and compassion.</p>
+        <p style="margin-top:16px">This success sparked a broader vision. We saw the potential to impact not just girls and women, but communities across South Africa, especially children and youth in need of basic support and opportunities.</p>
+        <div class="timeline" style="margin-top:40px">
+          <div class="timeline-item">
+            <div class="timeline-dot">21</div>
+            <div class="timeline-content">
+              <div class="timeline-year">2021 — FOUNDED</div>
+              <div class="timeline-title">First Sanitary Pad Drive</div>
+              <div class="timeline-desc">Iman, Chloe and Lehlohonolo launched the foundation's first drive, distributing sanitary towels to young girls in Gauteng and the Free State — exceeding targets threefold.</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot">22</div>
+            <div class="timeline-content">
+              <div class="timeline-year">2022 — GROWING IMPACT</div>
+              <div class="timeline-title">Second Drive — 24 December 2022</div>
+              <div class="timeline-desc">Our second major outreach drive expanded our reach, bringing essential support to more communities and deepening our commitment to dignity and care.</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot">→</div>
+            <div class="timeline-content">
+              <div class="timeline-year">TODAY</div>
+              <div class="timeline-title">Where We Are Now</div>
+              <div class="timeline-desc">We provide everyday essentials — clothing, food, and toiletries — to under-resourced communities across South Africa, with youth volunteers at the heart of every project.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="story-visual reveal delay-2">
+        <div class="story-img-stack">
+          <div class="story-img story-img-1" style="background:url('public/images/gallery/first-sanitary-pad-drive/pad-drive-01.jpeg') center/cover"></div>
+          <div class="story-img story-img-2" style="background:url('public/images/gallery/second-drive-2022/drive2-05.jpeg') center/cover"></div>
+          <div class="story-badge">
+            <div class="story-badge-num">3×</div>
+            <div class="story-badge-text">First Drive Target Exceeded</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MISSION / VISION / PURPOSE -->
+<section class="mv-section">
+  <div class="container">
+    <div style="text-align:center" class="reveal">
+      <span class="section-label" style="color:rgba(255,255,255,0.45);justify-content:center">What Drives Us</span>
+      <h2 style="color:var(--white)">Our Mission, Vision & Purpose</h2>
+    </div>
+    <div class="mv-grid">
+      <div class="mv-card reveal">
+        <div class="mv-card__icon"><span class="icon icon--xl" data-icon="target"></span></div>
+        <h3>Our Mission</h3>
+        <p>To provide everyday essentials — clothing, food, and toiletries — to under-resourced communities throughout South Africa, while engaging young volunteers in every project to cultivate a culture of giving and civic responsibility.</p>
+      </div>
+      <div class="mv-card featured reveal delay-1">
+        <div class="mv-card__icon"><span class="icon icon--xl" data-icon="star"></span></div>
+        <h3>Our Vision</h3>
+        <p>To build a compassionate, empowered South Africa where every person — especially the youth — has the opportunity to thrive, contribute, and feel seen.</p>
+      </div>
+      <div class="mv-card reveal delay-2">
+        <div class="mv-card__icon"><span class="icon icon--xl" data-icon="lightbulb"></span></div>
+        <h3>Our Purpose</h3>
+        <p>In a fast-paced world where many young people feel isolated or disengaged, we strive to create space for purpose, connection, and meaningful impact — empowering the youth to uplift others as one of the most powerful ways to create lasting change.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VALUES -->
+<section class="values-section">
+  <div class="container">
+    <div style="text-align:center" class="reveal">
+      <span class="section-label" style="justify-content:center">What We Stand For</span>
+      <h2 class="section-heading">Our Core Values</h2>
+    </div>
+    <div class="values-grid">
+      <div class="value-card reveal">
+        <div class="value-card__icon"><span class="icon icon--xl" data-icon="heart"></span></div>
+        <h3>Compassion</h3>
+        <p>We lead with kindness and empathy in everything we do.</p>
+      </div>
+      <div class="value-card reveal delay-1">
+        <div class="value-card__icon"><span class="icon icon--xl" data-icon="handshake"></span></div>
+        <h3>Community</h3>
+        <p>Together, we are stronger. We believe in the power of collective effort to bring about real change.</p>
+      </div>
+      <div class="value-card reveal delay-2">
+        <div class="value-card__icon"><span class="icon icon--xl" data-icon="flame"></span></div>
+        <h3>Youth Empowerment</h3>
+        <p>Young people are not just the future — they are the now. We believe in their energy, innovation, and leadership.</p>
+      </div>
+      <div class="value-card reveal delay-3">
+        <div class="value-card__icon"><span class="icon icon--xl" data-icon="search"></span></div>
+        <h3>Integrity</h3>
+        <p>We are committed to transparency, accountability, and respect in all our interactions.</p>
+      </div>
+      <div class="value-card reveal">
+        <div class="value-card__icon"><span class="icon icon--xl" data-icon="trending-up"></span></div>
+        <h3>Impact</h3>
+        <p>Our focus is on meaningful, sustainable support that makes a real difference in people's lives.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TEAM -->
+<section class="team-section">
+  <div class="container">
+    <div style="text-align:center" class="reveal">
+      <span class="section-label" style="justify-content:center">The Faces Behind the Foundation</span>
+      <h2 class="section-heading">Meet Our Founders</h2>
+      <p style="max-width:500px;margin:12px auto 0">Big Little Things Foundation was established in 2021 by three young South Africans committed to dignity, care, and community upliftment.</p>
+    </div>
+    <div class="team-grid">
+      <div class="team-card reveal">
+        <div class="team-card__img team-card__img--icon"><span class="icon icon--xl" data-icon="user"></span></div>
+        <div class="team-card__body">
+          <div class="team-card__name">Iman Cassiem</div>
+          <div class="team-card__role">Co-Founder</div>
+          <p class="team-card__bio">Iman co-founded Big Little Things Foundation in 2021, helping launch the first sanitary pad drive that exceeded expectations threefold and sparked a broader vision for community impact across South Africa.</p>
+          <div class="team-card__social">
+            <a href="tel:0725169605" class="social-chip">072 516 9605</a>
+          </div>
+        </div>
+      </div>
+      <div class="team-card reveal delay-1">
+        <div class="team-card__img team-card__img--icon"><span class="icon icon--xl" data-icon="user"></span></div>
+        <div class="team-card__body">
+          <div class="team-card__name">Chloe Grotewold</div>
+          <div class="team-card__role">Co-Founder</div>
+          <p class="team-card__bio">Chloe co-founded the foundation alongside Iman and Lehlohonolo, driven by a commitment to dignity, care, and empowering young people to lead meaningful community change.</p>
+          <div class="team-card__social">
+            <a href="tel:0781626965" class="social-chip">078 162 6965</a>
+          </div>
+        </div>
+      </div>
+      <div class="team-card reveal delay-2">
+        <div class="team-card__img team-card__img--icon"><span class="icon icon--xl" data-icon="user"></span></div>
+        <div class="team-card__body">
+          <div class="team-card__name">Lehlohonolo Mgedeza</div>
+          <div class="team-card__role">Co-Founder</div>
+          <p class="team-card__bio">Hloni co-founded Big Little Things Foundation and continues to help drive outreach across Gauteng and the Free State, connecting communities with essential support and opportunities.</p>
+          <div class="team-card__social">
+            <a href="tel:0810130522" class="social-chip">081 013 0522</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PARTNERS -->
+<section class="partners-section">
+  <div class="container">
+    <div style="text-align:center" class="reveal">
+      <p style="font-size:0.82rem;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray-400)">Supported By & Partnered With</p>
+    </div>
+    <div class="partners-bar reveal">
+      <div class="partner-logo">FoodForward SA</div>
+      <div class="partner-logo">Gift of the Givers</div>
+      <div class="partner-logo">DSD Gauteng</div>
+      <div class="partner-logo">NYDA</div>
+      <div class="partner-logo">AngloAmerican CSI</div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="footer__brand">
+        <a href="index.html" class="nav__logo"><img src="public/images/logo.png" alt="Big Little Things Foundation" class="nav__logo-img"></a>
+        <p>Empowering communities through youth-driven initiatives across South Africa.</p>
+        <div class="footer__social" style="margin-top:20px"><a href="https://www.instagram.com/biglittlethings.foundation?igsi=MTYyMGE0NzBtMTRicQ==" title="Instagram" target="_blank" rel="noopener">ig</a><a href="https://www.tiktok.com/@bltfoundation?_r=1&amp;_t=ZS-999eoTVYr5z" title="TikTok" target="_blank" rel="noopener">tk</a><a href="#" title="LinkedIn">in</a></div>
+      </div>
+      <div class="footer__col"><h4>Quick Links</h4><ul>
+        <li><a href="index.html">Home</a></li><li><a href="about.html">About Us</a></li>
+        <li><a href="projects.html">Projects</a></li><li><a href="gallery.html">Gallery</a></li>
+      </ul></div>
+      <div class="footer__col"><h4>Get Involved</h4><ul>
+        <li><a href="volunteer.html">Volunteer</a></li><li><a href="donate.html">Donate</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul></div>
+      <div class="footer__col"><h4>Contact</h4><ul>
+        <li><a href="tel:0810130522">Hloni: 081 013 0522</a></li>
+        <li><a href="tel:0725169605">Iman: 072 516 9605</a></li>
+        <li><a href="tel:0781626965">Chloe: 078 162 6965</a></li>
+        <li>South Africa</li>
+      </ul></div>
+    </div>
+    <div class="footer__bottom"><p>© 2025 Big Little Things Foundation. NPO Reg: 000/000/NPO</p></div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="public/js/icons.js"></script>
+<script src="public/js/config.js"></script>
+</body>
+</html>

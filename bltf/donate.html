@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Donate — Big Little Things Foundation</title>
+  <link rel="stylesheet" href="public/css/main.css">
+  <style>
+    body { padding-top: var(--nav-h); }
+    .donate-hero { background: var(--black); padding: 80px 0; text-align: center; }
+    .donate-hero h1 { color: var(--white); }
+    .donate-hero p { color: rgba(255,255,255,0.65); margin-top: 16px; }
+    .donate-main { padding: 80px 0; }
+    .donate-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 56px; align-items: start; }
+    .donate-form-card { background: var(--white); border-radius: var(--radius-lg); padding: 40px; box-shadow: var(--shadow-md); }
+    .donate-form-card h2 { margin-bottom: 28px; font-size: 1.6rem; }
+    .amount-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+    .amount-btn {
+      padding: 14px; border: 2px solid var(--gray-200); border-radius: var(--radius);
+      background: var(--white); cursor: pointer; font-family: var(--font-body);
+      font-size: 1rem; font-weight: 700; color: var(--black); transition: var(--transition);
+    }
+    .amount-btn:hover, .amount-btn.active {
+      border-color: var(--red); background: var(--red); color: var(--white);
+    }
+    .custom-amount { display: flex; align-items: center; }
+    .custom-amount span { padding: 12px 14px; background: var(--gray-100); border: 1.5px solid var(--gray-200); border-right: none; border-radius: var(--radius) 0 0 var(--radius); font-weight: 700; color: var(--gray-700); }
+    .custom-amount input { border-radius: 0 var(--radius) var(--radius) 0 !important; }
+    .donation-type-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .type-btn {
+      padding: 14px; border: 2px solid var(--gray-200); border-radius: var(--radius);
+      background: var(--white); cursor: pointer; font-family: var(--font-body);
+      font-size: 0.9rem; font-weight: 600; color: var(--black); transition: var(--transition);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .type-btn:hover, .type-btn.active { border-color: var(--red); background: rgba(208,2,27,0.06); color: var(--red); }
+    .impact-aside { position: sticky; top: calc(var(--nav-h) + 24px); }
+    .impact-card { background: var(--charcoal); color: var(--white); border-radius: var(--radius-lg); padding: 36px; }
+    .impact-card h3 { color: var(--white); margin-bottom: 24px; }
+    .impact-item { display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .impact-item:last-child { border-bottom: none; }
+    .impact-icon { font-size: 1.8rem; flex-shrink: 0; }
+    .impact-amount { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; color: var(--red); }
+    .impact-desc { font-size: 0.875rem; color: rgba(255,255,255,0.6); margin-top: 4px; }
+    .secure-badges { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+    .secure-badge { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: rgba(255,255,255,0.45); }
+    .payment-logos { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+    .payment-logo { padding: 6px 12px; border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius); font-size: 0.8rem; font-weight: 600; color: rgba(255,255,255,0.5); }
+    .donor-wall { margin-top: 80px; }
+    .donor-wall h2 { text-align: center; margin-bottom: 48px; }
+    .donors-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+    .donor-item { text-align: center; padding: 20px 16px; background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+    .donor-avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--red); color: var(--white); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; margin: 0 auto 10px; }
+    .donor-name { font-size: 0.875rem; font-weight: 600; color: var(--black); }
+    .donor-amount { font-size: 0.8rem; color: var(--red); font-weight: 600; margin-top: 4px; }
+    @media(max-width:768px){ .donate-grid{grid-template-columns:1fr} .amount-grid{grid-template-columns:repeat(2,1fr)} .donors-grid{grid-template-columns:repeat(3,1fr)} }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="container nav__inner">
+    <a href="index.html" class="nav__logo"><img src="public/images/logo.png" alt="Big Little Things Foundation" class="nav__logo-img"></a>
+    <ul class="nav__links">
+      <li><a href="index.html">Home</a></li><li><a href="about.html">About</a></li>
+      <li><a href="projects.html">Projects</a></li><li><a href="volunteer.html">Volunteer</a></li>
+      <li><a href="gallery.html">Gallery</a></li><li><a href="contact.html">Contact</a></li>
+    </ul>
+    <div class="nav__cta">
+      <a href="login.html" class="btn btn-outline btn-sm">Login</a>
+      <a href="donate.html" class="btn btn-primary btn-sm">Donate Now</a>
+    </div>
+  </div>
+</nav>
+
+<section class="donate-hero">
+  <div class="container">
+    <span class="section-label" style="justify-content:center;color:rgba(255,255,255,0.5)">Make a Difference</span>
+    <h1>Every Rand Counts</h1>
+    <p style="max-width:500px;margin:16px auto 0">Your donation directly funds food drives, school supplies, and community upliftment across South Africa.</p>
+  </div>
+</section>
+
+<section class="donate-main">
+  <div class="container">
+    <div class="donate-grid">
+      <!-- FORM -->
+      <div class="donate-form-card reveal">
+        <h2>Make a Donation</h2>
+
+        <!-- Donation Type -->
+        <div class="form-group">
+          <label class="form-label">What would you like to donate?</label>
+          <div class="donation-type-grid" id="donationTypes">
+            <button class="type-btn active" onclick="selectType(this,'money')" data-type="money"><span class="icon icon--sm" data-icon="banknote"></span> Money</button>
+            <button class="type-btn" onclick="selectType(this,'food')" data-type="food"><span class="icon icon--sm" data-icon="package"></span> Food Items</button>
+            <button class="type-btn" onclick="selectType(this,'clothing')" data-type="clothing"><span class="icon icon--sm" data-icon="shirt"></span> Clothing</button>
+            <button class="type-btn" onclick="selectType(this,'sanitary')" data-type="sanitary"><span class="icon icon--sm" data-icon="droplet"></span> Sanitary Products</button>
+          </div>
+        </div>
+
+        <!-- Money Section -->
+        <div id="moneySection">
+          <div class="form-group">
+            <label class="form-label">Choose an amount</label>
+            <div class="amount-grid" id="amountGrid">
+              <button class="amount-btn" onclick="selectAmount(this,50)">R50</button>
+              <button class="amount-btn active" onclick="selectAmount(this,100)">R100</button>
+              <button class="amount-btn" onclick="selectAmount(this,250)">R250</button>
+              <button class="amount-btn" onclick="selectAmount(this,500)">R500</button>
+            </div>
+            <div class="custom-amount">
+              <span>R</span>
+              <input type="number" class="form-control" id="customAmount" placeholder="Custom amount" min="10" step="0.01" oninput="handleCustom(this)">
+            </div>
+          </div>
+        </div>
+
+        <!-- Items Section -->
+        <div id="itemsSection" style="display:none">
+          <div class="form-group">
+            <label class="form-label">Quantity / Description</label>
+            <input type="text" class="form-control" id="itemDesc" placeholder="e.g. 5kg rice, 3 tins pilchards, 2 bags of clothing">
+          </div>
+        </div>
+
+        <!-- Donor Details -->
+        <div class="form-group">
+          <label class="form-label">Your Name <span style="color:var(--red)">*</span></label>
+          <input type="text" class="form-control" id="donorName" placeholder="Full name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address <span style="color:var(--red)">*</span></label>
+          <input type="email" class="form-control" id="donorEmail" placeholder="your@email.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">City</label>
+          <input type="text" class="form-control" id="donorCity" placeholder="e.g. Pretoria">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Message (optional)</label>
+          <textarea class="form-control" id="donorMessage" rows="3" placeholder="A message of support..."></textarea>
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+          <input type="checkbox" id="anonymous" style="width:16px;height:16px;accent-color:var(--red)">
+          <label for="anonymous" style="font-size:0.9rem;color:var(--gray-700);cursor:pointer">Make this donation anonymous</label>
+        </div>
+
+        <button class="btn btn-primary btn-lg" style="width:100%;justify-content:center" onclick="submitDonation()">
+          <span class="icon icon--sm" data-icon="lock"></span> Secure Donation
+        </button>
+        <p style="font-size:0.78rem;color:var(--gray-400);text-align:center;margin-top:12px">
+          SSL encrypted · PCI DSS compliant · Your data is safe
+        </p>
+      </div>
+
+      <!-- ASIDE -->
+      <div class="impact-aside reveal delay-2">
+        <div class="impact-card">
+          <h3>Your Impact</h3>
+          <div class="impact-item">
+            <div class="impact-icon"><span class="icon" data-icon="utensils"></span></div>
+            <div>
+              <div class="impact-amount">R100</div>
+              <div class="impact-desc">Feeds 5 families for a day</div>
+            </div>
+          </div>
+          <div class="impact-item">
+            <div class="impact-icon"><span class="icon" data-icon="backpack"></span></div>
+            <div>
+              <div class="impact-amount">R250</div>
+              <div class="impact-desc">Supplies 1 learner with a full school kit</div>
+            </div>
+          </div>
+          <div class="impact-item">
+            <div class="impact-icon"><span class="icon" data-icon="scarf"></span></div>
+            <div>
+              <div class="impact-amount">R150</div>
+              <div class="impact-desc">Provides a winter blanket to a family</div>
+            </div>
+          </div>
+          <div class="impact-item">
+            <div class="impact-icon"><span class="icon" data-icon="pill"></span></div>
+            <div>
+              <div class="impact-amount">R500</div>
+              <div class="impact-desc">Stocks a community health kit for 1 month</div>
+            </div>
+          </div>
+          <div class="secure-badges">
+            <div class="secure-badge"><span class="icon" data-icon="lock"></span> 256-bit SSL</div>
+            <div class="secure-badge"><span class="icon" data-icon="check"></span> PayFast Secured</div>
+            <div class="secure-badge"><span class="icon" data-icon="shield"></span> PCI DSS</div>
+          </div>
+          <p style="font-size:0.78rem;color:rgba(255,255,255,0.35);margin-top:16px">Payment powered by</p>
+          <div class="payment-logos">
+            <div class="payment-logo">PayFast</div>
+            <div class="payment-logo">SnapScan</div>
+            <div class="payment-logo">Visa</div>
+            <div class="payment-logo">Mastercard</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Donors -->
+    <div class="donor-wall reveal">
+      <h2>Recent Donors</h2>
+      <div class="donors-grid" id="donorWall"></div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid"><div class="footer__brand"><a href="index.html" class="nav__logo"><img src="public/images/logo.png" alt="Big Little Things Foundation" class="nav__logo-img"></a><p>Empowering communities through youth-driven initiatives across South Africa.</p><div class="footer__social" style="margin-top:20px"><a href="https://www.instagram.com/biglittlethings.foundation?igsi=MTYyMGE0NzBtMTRicQ==" title="Instagram" target="_blank" rel="noopener">ig</a><a href="https://www.tiktok.com/@bltfoundation?_r=1&amp;_t=ZS-999eoTVYr5z" title="TikTok" target="_blank" rel="noopener">tk</a><a href="#" title="LinkedIn">in</a></div></div><div class="footer__col"><h4>Quick Links</h4><ul><li><a href="index.html">Home</a></li><li><a href="about.html">About Us</a></li><li><a href="projects.html">Projects</a></li><li><a href="gallery.html">Gallery</a></li></ul></div><div class="footer__col"><h4>Get Involved</h4><ul><li><a href="volunteer.html">Volunteer</a></li><li><a href="donate.html">Donate</a></li><li><a href="contact.html">Contact</a></li></ul></div><div class="footer__col"><h4>Contact</h4><ul><li><a href="tel:0810130522">Hloni: 081 013 0522</a></li><li><a href="tel:0725169605">Iman: 072 516 9605</a></li><li><a href="tel:0781626965">Chloe: 078 162 6965</a></li><li>South Africa</li></ul></div></div>
+    <div class="footer__bottom"><p>© 2025 Big Little Things Foundation. NPO Reg: 000/000/NPO</p></div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="public/js/icons.js"></script>
+<script src="public/js/config.js"></script>
+<script>
+let selectedAmount = 100;
+let selectedType = 'money';
+
+function selectAmount(btn, val) {
+  document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedAmount = val;
+  document.getElementById('customAmount').value = '';
+}
+function handleCustom(input) {
+  document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
+  selectedAmount = Number(input.value) || 0;
+}
+function selectType(btn, type) {
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedType = type;
+  document.getElementById('moneySection').style.display = type === 'money' ? 'block' : 'none';
+  document.getElementById('itemsSection').style.display = type !== 'money' ? 'block' : 'none';
+}
+function submitDonation() {
+  const name = document.getElementById('donorName').value.trim();
+  const email = document.getElementById('donorEmail').value.trim().toLowerCase();
+  const itemDescription = document.getElementById('itemDesc').value.trim();
+  if (!/^[A-Za-z][A-Za-z '-]{1,99}$/.test(name)) { Toast.error('Please enter a valid name.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { Toast.error('Please enter a valid email.'); return; }
+  if (selectedType === 'money' && (!Number.isFinite(selectedAmount) || selectedAmount < 10)) { Toast.error('Minimum donation is R10.'); return; }
+  if (selectedType !== 'money' && itemDescription.length < 3) { Toast.error('Please describe the items you would like to donate.'); return; }
+
+  const donation = {
+    donor_name: document.getElementById('anonymous').checked ? 'Anonymous' : name,
+    donor_email: email,
+    type: selectedType,
+    amount: selectedType === 'money' ? selectedAmount : null,
+    item_description: selectedType !== 'money' ? itemDescription : null,
+    city: document.getElementById('donorCity').value,
+    message: document.getElementById('donorMessage').value,
+    anonymous: document.getElementById('anonymous').checked,
+    date: new Date().toISOString()
+  };
+
+  DB.insert('donations', donation);
+
+  // Show receipt modal
+  const summary = selectedType === 'money' ? `R${selectedAmount}` : `${selectedType} donation`;
+  Toast.success(`Thank you ${name}! Your ${summary} donation has been recorded. A receipt will be sent to ${email}.`);
+
+  // Reset
+  document.getElementById('donorName').value = '';
+  document.getElementById('donorEmail').value = '';
+  document.getElementById('donorCity').value = '';
+  document.getElementById('donorMessage').value = '';
+  renderDonorWall();
+}
+
+function renderDonorWall() {
+  const donations = DB.get('donations').slice(-10).reverse();
+  const wall = document.getElementById('donorWall');
+  if (!wall) return;
+  wall.innerHTML = donations.map(d => {
+    const initials = d.anonymous ? '?' : d.donor_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+    return `<div class="donor-item">
+      <div class="donor-avatar">${initials}</div>
+      <div class="donor-name">${d.anonymous ? 'Anonymous' : d.donor_name}</div>
+      <div class="donor-amount">${d.type === 'money' ? 'R'+d.amount : d.type}</div>
+      <div style="font-size:0.72rem;color:var(--gray-400);margin-top:2px">${fmt.relativeTime(d.date)}</div>
+    </div>`;
+  }).join('');
+}
+
+document.addEventListener('DOMContentLoaded', renderDonorWall);
+</script>
+</body>
+</html>
