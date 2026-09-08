@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Big Little Things Foundation</title>
+  <link rel="icon" href="public/images/logo.png" type="image/png">
+  <link rel="stylesheet" href="public/css/main.css">
+  <style>
+    * { box-sizing: border-box; }
+    body { padding: 0; margin: 0; min-height: 100vh; display: flex; background: var(--warm-white); }
+    .login-visual {
+      flex: 1; background: linear-gradient(160deg,#0D0D0D 0%,#1A0005 60%,#D0021B 100%);
+      display: flex; flex-direction: column; justify-content: flex-end; padding: 60px;
+      position: relative; overflow: hidden;
+    }
+    .login-visual::before {
+      content: ''; position: absolute; inset: 0;
+      background: url('public/images/logo.png') center/contain no-repeat;
+      background-size: min(60vw, 420px);
+      background-color: #0D0D0D;
+      opacity: 0.18;
+    }
+    .login-visual::after {
+      content: ''; position: absolute; inset: 0;
+      background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.06) 1px, transparent 0);
+      background-size: 36px 36px;
+    }
+    .login-visual-content { position: relative; z-index: 1; }
+    .login-visual-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 48px; }
+    .login-visual-logo-icon { width: 48px; height: 48px; border-radius: 50%; background: var(--red); display:flex; align-items:center; justify-content:center; }
+    .login-visual-logo img { height: 72px; width: auto; }
+    .login-visual h1 { color: var(--white); font-size: clamp(2rem,3.5vw,3rem); line-height: 1.2; margin-bottom: 20px; }
+    .login-visual p { color: rgba(255,255,255,0.6); font-size: 1rem; max-width: 360px; line-height: 1.7; }
+    .login-stats { display: flex; gap: 36px; margin-top: 40px; }
+    .login-stat-num { font-family: var(--font-display); font-size: 1.8rem; font-weight: 900; color: var(--red); }
+    .login-stat-label { font-size: 0.8rem; color: rgba(255,255,255,0.45); margin-top: 2px; }
+
+    .login-form-wrap {
+      width: 480px; display: flex; align-items: center; justify-content: center;
+      padding: 48px 56px;
+    }
+    .login-form-inner { width: 100%; }
+    .login-tab-bar { display: flex; gap: 0; margin-bottom: 36px; border-bottom: 2px solid var(--gray-200); }
+    .login-tab {
+      flex: 1; padding: 14px; font-family: var(--font-body); font-size: 0.9375rem;
+      font-weight: 600; background: none; border: none; cursor: pointer;
+      color: var(--gray-400); border-bottom: 2px solid transparent; margin-bottom: -2px;
+      transition: var(--transition);
+    }
+    .login-tab.active { color: var(--black); border-bottom-color: var(--red); }
+    .login-form-inner h2 { margin-bottom: 8px; }
+    .login-form-inner p { color: var(--gray-700); font-size: 0.9rem; margin-bottom: 32px; }
+    .forgot-link { font-size: 0.85rem; color: var(--red); font-weight: 600; float: right; }
+    .forgot-link:hover { text-decoration: underline; }
+    .divider { display: flex; align-items: center; gap: 16px; margin: 24px 0; color: var(--gray-400); font-size: 0.85rem; }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--gray-200); }
+    .demo-accounts { background: var(--gray-100); border-radius: var(--radius); padding: 16px; font-size: 0.82rem; color: var(--gray-700); }
+    .demo-accounts h4 { color: var(--black); font-size: 0.85rem; margin-bottom: 8px; }
+    .demo-btn { display: inline-block; margin: 3px; padding: 4px 10px; border-radius: 4px; background: var(--white); border: 1px solid var(--gray-200); cursor: pointer; font-size: 0.78rem; font-weight: 600; transition: var(--transition); }
+    .demo-btn:hover { background: var(--red); color: var(--white); border-color: var(--red); }
+    .session-alert { margin-bottom: 20px; padding: 16px; border: 1px solid rgba(208,2,27,0.2); border-radius: 12px; background: rgba(208,2,27,0.08); color: var(--black); font-size: 0.95rem; }
+    .session-alert a { color: var(--red); font-weight: 700; }
+    @media(max-width: 900px) { .login-visual { display: none; } .login-form-wrap { width: 100%; padding: 32px 24px; } }
+  </style>
+</head>
+<body>
+<div class="login-visual">
+  <div class="login-visual-content">
+    <a href="index.html" class="login-visual-logo">
+      <div class="login-visual-logo-icon"><span class="icon icon--logo" data-icon="heart"></span></div>
+      Big Little Things
+    </a>
+    <h1>Welcome Back, Changemaker</h1>
+    <p>Log in to track your volunteer hours, download certificates, and see the impact you've created.</p>
+    <div class="login-stats">
+      <div><div class="login-stat-num">200+</div><div class="login-stat-label">Volunteers</div></div>
+      <div><div class="login-stat-num">50+</div><div class="login-stat-label">Projects</div></div>
+      <div><div class="login-stat-num">3</div><div class="login-stat-label">Cities</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="login-form-wrap">
+  <div class="login-form-inner">
+    <div id="sessionNotice" class="session-alert" style="display:none"></div>
+    <div class="login-tab-bar">
+      <button class="login-tab active" onclick="switchTab('login',this)">Sign In</button>
+      <button class="login-tab" onclick="switchTab('forgot',this)">Forgot Password</button>
+    </div>
+
+    <!-- LOGIN TAB -->
+    <div id="tab-login">
+      <h2>Sign In</h2>
+      <p>Access your volunteer or admin dashboard.</p>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-control" id="loginEmail" placeholder="your@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password <a href="#" class="forgot-link" onclick="switchToForgot()">Forgot?</a></label>
+        <input type="password" class="form-control" id="loginPass" placeholder="Your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:24px">
+        <input type="checkbox" id="rememberMe" style="accent-color:var(--red)">
+        <label for="rememberMe" style="font-size:0.875rem;color:var(--gray-700)">Remember me</label>
+      </div>
+      <button class="btn btn-primary btn-lg" style="width:100%;justify-content:center" onclick="doLogin()">Sign In</button>
+
+      <div class="divider">or</div>
+      <div style="text-align:center;font-size:0.9rem;color:var(--gray-700)">
+        Don't have an account? <a href="volunteer.html#register" style="color:var(--red);font-weight:600">Register as Volunteer</a>
+      </div>
+
+      <div class="demo-accounts" style="margin-top:24px">
+        <h4><span class="icon icon--inline" data-icon="key"></span> Demo Accounts</h4>
+        <p style="margin-bottom:8px;color:var(--gray-400);font-size:0.78rem">Click to auto-fill for testing:</p>
+        <span class="demo-btn" onclick="fillDemo('admin@biglittlethings.org.za','Admin@2025!')"><span class="icon" data-icon="crown"></span> Admin</span>
+        <span class="demo-btn" onclick="fillDemo('volunteer@biglittlethings.org.za','Vol@2025!')"><span class="icon" data-icon="user"></span> Volunteer</span>
+      </div>
+    </div>
+
+    <!-- FORGOT TAB -->
+    <div id="tab-forgot" style="display:none">
+      <h2>Reset Password</h2>
+      <p>Enter your email and we'll send you a reset link.</p>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-control" id="forgotEmail" placeholder="your@email.com">
+      </div>
+      <button class="btn btn-primary btn-lg" style="width:100%;justify-content:center" onclick="doForgot()">Send Reset Link</button>
+      <div style="text-align:center;margin-top:16px">
+        <a href="#" onclick="switchTab('login',null)" style="font-size:0.9rem;color:var(--gray-700)">← Back to Sign In</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="public/js/icons.js"></script>
+<script src="public/js/config.js"></script>
+<script>
+// Seed demo users on load
+document.addEventListener('DOMContentLoaded', () => {
+  const users = DB.get('users');
+  if (!users.find(u => u.email === 'admin@biglittlethings.org.za')) {
+    DB.insert('users', { name: 'Admin Director', email: 'admin@biglittlethings.org.za', password_hash: btoa('Admin@2025!'), role: 'admin', status: 'approved' });
+  }
+  if (!users.find(u => u.email === 'volunteer@biglittlethings.org.za')) {
+    DB.insert('users', { name: 'Lerato Dlamini', email: 'volunteer@biglittlethings.org.za', password_hash: btoa('Vol@2025!'), role: 'volunteer', status: 'approved', hours: 12, city: 'Pretoria' });
+  }
+  const demoVolunteer = DB.get('users').find(u => u.email === 'volunteer@biglittlethings.org.za');
+  const demoHours = DB.get('volunteer_hours').filter(h => h.user_id === demoVolunteer?.id && h.status === 'approved');
+  if (demoVolunteer && demoHours.reduce((total, record) => total + Number(record.hours || 0), 0) < 10) {
+    DB.insert('volunteer_hours', { user_id: demoVolunteer.id, event_name: 'Demo Volunteer Service', date: '2026-08-24', hours: 10, location: 'Pretoria', notes: 'Demo certificate example', status: 'approved' });
+  }
+  // Redirect if already logged in as admin, otherwise allow account switching
+  const session = JSON.parse(localStorage.getItem('bltf_session') || 'null');
+  if (session) {
+    if (session.role === 'admin') {
+      window.location.href = 'dashboard/admin.html';
+      return;
+    }
+    const notice = document.getElementById('sessionNotice');
+    if (notice) {
+      notice.style.display = 'block';
+      notice.innerHTML = `You are currently signed in as <strong>${session.name}</strong> (<strong>${session.role}</strong>). <a href="#" onclick="event.preventDefault(); logoutSession()">Sign out to switch accounts</a>.`;
+    }
+  }
+});
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('tab-login').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('tab-forgot').style.display = tab === 'forgot' ? 'block' : 'none';
+}
+function switchToForgot() { document.querySelectorAll('.login-tab')[1].click(); }
+
+function fillDemo(email, pass) {
+  document.getElementById('loginEmail').value = email;
+  document.getElementById('loginPass').value = pass;
+  Toast.info('Demo credentials filled. Click Sign In!');
+}
+
+function logoutSession() {
+  localStorage.removeItem('bltf_session');
+  window.location.reload();
+}
+
+function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pass  = document.getElementById('loginPass').value;
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !pass) { Toast.error('Enter a valid email and password.'); return; }
+
+  const users = DB.get('users');
+  const user = users.find(u => u.email.toLowerCase() === email && u.password_hash === btoa(pass));
+
+  if (!user) { Toast.error('Incorrect email or password. Please try again.'); return; }
+
+  localStorage.setItem('bltf_session', JSON.stringify({ id: user.id, name: user.name, role: user.role, email: user.email }));
+  Toast.success(`Welcome back, ${user.name.split(' ')[0]}! Redirecting...`);
+  setTimeout(() => {
+    window.location.href = user.role === 'admin' ? 'dashboard/admin.html' : 'dashboard/volunteer.html';
+  }, 1200);
+}
+
+function doForgot() {
+  const email = document.getElementById('forgotEmail').value.trim();
+  if (!email || !email.includes('@')) { Toast.error('Please enter a valid email.'); return; }
+  Toast.success('Password reset link sent! Check your inbox.');
+}
+</script>
+</body>
+</html>

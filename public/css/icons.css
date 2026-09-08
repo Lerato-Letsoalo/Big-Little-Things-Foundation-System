@@ -1,0 +1,157 @@
+/* =============================================
+   icons.css — Professional SVG Icon Styles
+   ============================================= */
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 0;
+  color: inherit;
+}
+
+.icon svg {
+  display: block;
+  width: 1em;
+  height: 1em;
+}
+
+.icon--xs svg { width: 14px; height: 14px; }
+.icon--sm svg { width: 16px; height: 16px; }
+.icon--md svg { width: 20px; height: 20px; }
+.icon--lg svg { width: 28px; height: 28px; }
+.icon--xl svg { width: 36px; height: 36px; }
+
+.icon--logo svg { width: 18px; height: 18px; color: var(--white); }
+.icon--inline { margin-right: 6px; vertical-align: middle; }
+.icon--inline svg { width: 15px; height: 15px; }
+
+.icon-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Logo containers */
+.nav__logo-icon .icon,
+.sidebar__logo-icon .icon,
+.login-visual-logo-icon .icon {
+  color: var(--white);
+}
+
+/* Card & feature icons */
+.drive-card__icon .icon svg,
+.why-card__icon .icon svg,
+.mv-card__icon .icon svg,
+.value-card__icon .icon svg {
+  width: 28px;
+  height: 28px;
+  color: var(--red);
+}
+
+.about-preview__value .icon svg {
+  width: 18px;
+  height: 18px;
+  color: var(--red);
+}
+
+.impact-icon .icon svg {
+  width: 28px;
+  height: 28px;
+  color: var(--red);
+}
+
+.info-icon .icon svg {
+  width: 24px;
+  height: 24px;
+  color: var(--red);
+}
+
+.stat-card__icon .icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.stat-card__icon.red .icon svg   { color: var(--red); }
+.stat-card__icon.green .icon svg { color: #16A34A; }
+.stat-card__icon.blue .icon svg  { color: #2563EB; }
+.stat-card__icon.orange .icon svg{ color: #EA580C; }
+
+.sidebar__link .icon svg,
+.sidebar__footer .icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.header-search .icon svg,
+.header-notif .icon svg {
+  width: 18px;
+  height: 18px;
+  color: var(--gray-700);
+}
+
+.empty-state__icon .icon svg {
+  width: 48px;
+  height: 48px;
+  color: var(--gray-400);
+}
+
+.secure-badge .icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.type-btn .icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.team-social-btn .icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.demo-btn .icon {
+  margin-right: 4px;
+}
+
+.demo-btn .icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.toast .icon svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.modal__close .icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.lightbox__close .icon svg {
+  width: 24px;
+  height: 24px;
+  color: var(--white);
+}
+
+.tab-nav-btn .icon svg {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+}
+
+.past-card__stat .icon svg {
+  width: 16px;
+  height: 16px;
+  color: var(--red);
+}
+
+.event-card__meta .icon-text,
+.drive-card__location .icon-text {
+  font-size: inherit;
+  color: inherit;
+}

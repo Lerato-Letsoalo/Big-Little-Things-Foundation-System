@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gallery — Big Little Things Foundation</title>
+  <link rel="icon" href="public/images/logo.png" type="image/png">
+  <link rel="stylesheet" href="public/css/main.css">
+  <style>
+    body { padding-top: var(--nav-h); }
+    .gal-hero { background:var(--black); padding:80px 0 64px; text-align:center; }
+    .gal-hero h1 { color:var(--white); }
+    .gal-hero p { color:rgba(255,255,255,0.6); max-width:480px; margin:16px auto 0; }
+
+    .filter-bar { background:var(--white); border-bottom:1px solid var(--gray-200); padding:16px 0; position:sticky; top:var(--nav-h); z-index:50; }
+    .filter-bar__inner { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .filter-btn { padding:8px 18px; border-radius:99px; border:1.5px solid var(--gray-200); background:var(--white); font-family:var(--font-body); font-size:0.85rem; font-weight:600; color:var(--gray-700); cursor:pointer; transition:var(--transition); }
+    .filter-btn.active, .filter-btn:hover { background:var(--red); color:var(--white); border-color:var(--red); }
+    .filter-count { margin-left:auto; font-size:0.85rem; color:var(--gray-400); }
+
+    .gallery-section { padding:56px 0 80px; }
+    .gallery-grid { columns:4; column-gap:14px; margin-top:40px; }
+    .gallery-item { break-inside:avoid; margin-bottom:14px; border-radius:var(--radius); overflow:hidden; cursor:pointer; position:relative; display:block; }
+    .gallery-item img, .gallery-item .img-placeholder { width:100%; display:block; border-radius:var(--radius); transition:transform 0.4s ease; }
+    .gallery-item:hover .img-placeholder { transform:scale(1.04); }
+    .img-placeholder { background-size:cover!important; background-position:center!important; }
+    .gallery-item__overlay { position:absolute; inset:0; background:linear-gradient(0deg,rgba(13,13,13,0.85) 0%,transparent 50%); opacity:0; transition:var(--transition); border-radius:var(--radius); display:flex; flex-direction:column; justify-content:flex-end; padding:16px; }
+    .gallery-item:hover .gallery-item__overlay { opacity:1; }
+    .gallery-item__caption { color:var(--white); font-size:0.875rem; font-weight:600; }
+    .gallery-item__meta { color:rgba(255,255,255,0.6); font-size:0.78rem; margin-top:3px; }
+
+    /* Lightbox */
+    .lightbox { position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:3000; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:var(--transition); }
+    .lightbox.open { opacity:1; pointer-events:all; }
+    .lightbox__img-wrap { max-width:80vw; max-height:85vh; position:relative; }
+    .lightbox__img { width:100%; max-height:80vh; object-fit:contain; border-radius:var(--radius); }
+    .lightbox__img-placeholder { width:70vw; max-height:80vh; border-radius:var(--radius); background-size:cover!important; background-position:center!important; min-height:400px; }
+    .lightbox__caption { color:var(--white); text-align:center; margin-top:16px; font-size:0.9rem; }
+    .lightbox__meta { color:rgba(255,255,255,0.45); text-align:center; font-size:0.8rem; margin-top:4px; }
+    .lightbox__close { position:fixed; top:20px; right:24px; width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.1); border:none; color:var(--white); font-size:1.3rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:var(--transition); }
+    .lightbox__close:hover { background:var(--red); }
+    .lightbox__nav { position:fixed; top:50%; transform:translateY(-50%); width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.1); border:none; color:var(--white); font-size:1.2rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:var(--transition); }
+    .lightbox__nav:hover { background:var(--red); }
+    .lightbox__nav-prev { left:16px; }
+    .lightbox__nav-next { right:16px; }
+
+    @media(max-width:1024px){ .gallery-grid{columns:3} }
+    @media(max-width:768px){ .gallery-grid{columns:2} .lightbox__img-placeholder{width:92vw;min-height:240px} }
+    @media(max-width:480px){ .gallery-grid{columns:1} }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="container nav__inner">
+    <a href="index.html" class="nav__logo"><img src="public/images/logo.png" alt="Big Little Things Foundation" class="nav__logo-img"></a>
+    <ul class="nav__links">
+      <li><a href="index.html">Home</a></li><li><a href="about.html">About</a></li>
+      <li><a href="projects.html">Projects</a></li><li><a href="volunteer.html">Volunteer</a></li>
+      <li><a href="gallery.html" class="active">Gallery</a></li><li><a href="contact.html">Contact</a></li>
+    </ul>
+    <div class="nav__cta">
+      <a href="login.html" class="btn btn-outline btn-sm">Login</a>
+      <a href="donate.html" class="btn btn-primary btn-sm">Donate Now</a>
+    </div>
+  </div>
+</nav>
+
+<section class="gal-hero">
+  <div class="container">
+    <span class="section-label" style="justify-content:center;color:rgba(255,255,255,0.45)">Visual Stories</span>
+    <h1 class="animate-up">Impact in Pictures</h1>
+    <p class="animate-up delay-1">Every photo tells the story of a community touched, a life changed, a volunteer who showed up. This is what impact looks like.</p>
+  </div>
+</section>
+
+<div class="filter-bar">
+  <div class="container">
+    <div class="filter-bar__inner">
+      <button class="filter-btn active" onclick="filterGallery('all',this)">All Photos</button>
+      <button class="filter-btn" onclick="filterGallery('first-drive',this)">First Sanitary Pad Drive</button>
+      <button class="filter-btn" onclick="filterGallery('second-drive',this)">Second Drive — 24 Dec 2022</button>
+      <button class="filter-btn" onclick="filterGallery('uploads',this)">Uploaded Photos</button>
+      <span class="filter-count" id="photoCount">36 photos</span>
+    </div>
+  </div>
+</div>
+
+<section class="gallery-section">
+  <div class="container">
+    <div class="gallery-grid" id="galleryGrid"></div>
+  </div>
+</section>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox__close" onclick="closeLightbox()"><span class="icon" data-icon="x"></span></button>
+  <button class="lightbox__nav lightbox__nav-prev" onclick="navLightbox(-1)"><span class="icon" data-icon="chevron-left"></span></button>
+  <div class="lightbox__img-wrap">
+    <div class="lightbox__img-placeholder" id="lbImg"></div>
+    <div class="lightbox__caption" id="lbCaption"></div>
+    <div class="lightbox__meta" id="lbMeta"></div>
+  </div>
+  <button class="lightbox__nav lightbox__nav-next" onclick="navLightbox(1)"><span class="icon" data-icon="chevron-right"></span></button>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid"><div class="footer__brand"><a href="index.html" class="nav__logo"><img src="public/images/logo.png" alt="Big Little Things Foundation" class="nav__logo-img"></a><p>Empowering communities through youth-driven initiatives across South Africa.</p><div class="footer__social" style="margin-top:20px"><a href="https://www.instagram.com/biglittlethings.foundation?igsi=MTYyMGE0NzBtMTRicQ==" title="Instagram" target="_blank" rel="noopener">ig</a><a href="https://www.tiktok.com/@bltfoundation?_r=1&amp;_t=ZS-999eoTVYr5z" title="TikTok" target="_blank" rel="noopener">tk</a><a href="#" title="LinkedIn">in</a></div></div><div class="footer__col"><h4>Quick Links</h4><ul><li><a href="index.html">Home</a></li><li><a href="about.html">About Us</a></li><li><a href="projects.html">Projects</a></li><li><a href="gallery.html">Gallery</a></li></ul></div><div class="footer__col"><h4>Get Involved</h4><ul><li><a href="volunteer.html">Volunteer</a></li><li><a href="donate.html">Donate</a></li><li><a href="contact.html">Contact</a></li></ul></div><div class="footer__col"><h4>Contact</h4><ul><li><a href="tel:0810130522">Hloni: 081 013 0522</a></li><li><a href="tel:0725169605">Iman: 072 516 9605</a></li><li><a href="tel:0781626965">Chloe: 078 162 6965</a></li><li>South Africa</li></ul></div></div>
+    <div class="footer__bottom"><p>© 2025 Big Little Things Foundation. NPO Reg: 000/000/NPO</p></div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="public/js/icons.js"></script>
+<script src="public/js/config.js"></script>
+<script>
+const galleryData = [
+  ...Array.from({ length: 7 }, (_, i) => ({
+    url: `public/images/gallery/first-sanitary-pad-drive/pad-drive-${String(i + 1).padStart(2, '0')}.jpeg`,
+    caption: 'First Sanitary Pad Drive',
+    event: 'First Sanitary Pad Drive',
+    date: '',
+    category: 'first-drive',
+    h: 260 + (i % 3) * 40
+  })),
+  ...Array.from({ length: 29 }, (_, i) => ({
+    url: `public/images/gallery/second-drive-2022/drive2-${String(i + 1).padStart(2, '0')}.jpeg`,
+    caption: 'Second Sanitary Pad Drive',
+    event: 'Second Drive',
+    date: '24 December 2022',
+    category: 'second-drive',
+    h: 240 + (i % 4) * 35
+  })),
+  ...DB.get('gallery_uploads').map(image => ({
+    ...image,
+    h: 300,
+    date: image.date ? new Date(image.date).toLocaleDateString('en-ZA') : ''
+  }))
+];
+
+let currentCategory = 'all';
+let currentIndex = 0;
+let filteredData = [...galleryData];
+
+function filterGallery(cat, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentCategory = cat;
+  filteredData = cat === 'all' ? [...galleryData] : galleryData.filter(g => g.category === cat);
+  document.getElementById('photoCount').textContent = `${filteredData.length} photo${filteredData.length!==1?'s':''}`;
+  renderGallery();
+}
+
+function renderGallery() {
+  const grid = document.getElementById('galleryGrid');
+  grid.innerHTML = filteredData.map((item, i) => `
+    <div class="gallery-item" onclick="openLightbox(${i})" data-category="${item.category}">
+      <div class="img-placeholder" style="background:url('${item.url}') center/cover; height:${item.h}px"></div>
+      <div class="gallery-item__overlay">
+        <div class="gallery-item__caption">${item.caption}</div>
+        <div class="gallery-item__meta">${item.date ? `${item.event} · ${item.date}` : item.event}</div>
+      </div>
+    </div>`).join('');
+}
+
+function openLightbox(index) {
+  currentIndex = index;
+  updateLightbox();
+  document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function navLightbox(dir) {
+  currentIndex = (currentIndex + dir + filteredData.length) % filteredData.length;
+  updateLightbox();
+}
+function updateLightbox() {
+  const item = filteredData[currentIndex];
+  document.getElementById('lbImg').style.background = `url('${item.url}') center/cover`;
+  document.getElementById('lbCaption').textContent = item.caption;
+  document.getElementById('lbMeta').textContent = item.date ? `${item.event} · ${item.date}` : item.event;
+}
+document.getElementById('lightbox').addEventListener('click', function(e) { if(e.target===this) closeLightbox(); });
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('lightbox').classList.contains('open')) return;
+  if (e.key === 'ArrowLeft') navLightbox(-1);
+  if (e.key === 'ArrowRight') navLightbox(1);
+  if (e.key === 'Escape') closeLightbox();
+});
+
+document.addEventListener('DOMContentLoaded', () => { renderGallery(); });
+</script>
+</body>
+</html>

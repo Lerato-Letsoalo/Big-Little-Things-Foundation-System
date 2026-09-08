@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projects — Big Little Things Foundation</title>
+  <link rel="stylesheet" href="public/css/main.css">
+  <style>
+    body { padding-top: var(--nav-h); }
+    .proj-hero { background:var(--black); padding:96px 0 72px; position:relative; overflow:hidden; }
+    .proj-hero::before { content:''; position:absolute; inset:0; background:url('public/images/gallery/first-sanitary-pad-drive/pad-drive-06.jpeg') center/cover; opacity:0.2; }
+    .proj-hero::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg,rgba(13,13,13,0.96) 40%,rgba(13,13,13,0.4)); }
+    .proj-hero .container { position:relative; z-index:1; }
+    .proj-hero h1 { color:var(--white); }
+    .proj-hero p { color:rgba(255,255,255,0.6); max-width:500px; margin-top:16px; }
+
+    .tab-nav { background:var(--white); border-bottom:1px solid var(--gray-200); position:sticky; top:var(--nav-h); z-index:50; }
+    .tab-nav__inner { display:flex; gap:0; }
+    .tab-nav-btn { padding:18px 28px; border:none; background:none; cursor:pointer; font-family:var(--font-body); font-size:0.9375rem; font-weight:600; color:var(--gray-400); border-bottom:3px solid transparent; transition:var(--transition); }
+    .tab-nav-btn.active { color:var(--black); border-bottom-color:var(--red); }
+    .tab-nav-btn:hover { color:var(--black); }
+
+    .projects-section { padding:72px 0; }
+    .projects-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:28px; margin-top:48px; }
+    .project-card { background:var(--white); border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow-sm); border:1px solid var(--gray-200); transition:var(--transition); }
+    .project-card:hover { box-shadow:var(--shadow-lg); transform:translateY(-5px); }
+    .project-card__img { height:200px; background-size:cover!important; background-position:center!important; position:relative; }
+    .project-card__tag { position:absolute; top:14px; left:14px; }
+    .project-card__body { padding:24px; }
+    .project-card__title { font-family:var(--font-display); font-size:1.15rem; font-weight:700; color:var(--black); margin-bottom:8px; }
+    .project-card__location { font-size:0.82rem; color:var(--gray-400); display:flex; align-items:center; gap:5px; margin-bottom:12px; }
+    .project-card__desc { font-size:0.875rem; color:var(--gray-700); line-height:1.65; margin-bottom:18px; }
+    .project-card__footer { padding:0 24px 24px; }
+
+    .past-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:28px; margin-top:48px; }
+    .past-card { background:var(--white); border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow-sm); }
+    .past-card__img { height:180px; background-size:cover!important; background-position:center!important; filter:grayscale(20%); }
+    .past-card__body { padding:20px; }
+    .past-card__year { font-size:0.75rem; font-weight:700; color:var(--red); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:6px; }
+    .past-card__title { font-family:var(--font-display); font-size:1rem; font-weight:700; color:var(--black); margin-bottom:8px; }
+    .past-card__stat { display:flex; align-items:center; gap:8px; font-size:0.82rem; color:var(--gray-700); margin-top:8px; }
+
+    .impact-banner { background:var(--red); padding:72px 0; text-align:center; margin-top:0; }
+    .impact-banner h2 { color:var(--white); margin-bottom:12px; }
+    .impact-banner p { color:rgba(255,255,255,0.8); max-width:480px; margin:0 auto 32px; }
+
+    @media(max-width:1024px){ .projects-grid,.past-grid{grid-template-columns:1fr 1fr} }
+    @media(max-width:768px){ .projects-grid,.past-grid{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="container nav__inner">
+    <a href="index.html" class="nav__logo"><img src="public/images/logo.png" alt="Big Little Things Foundation" class="nav__logo-img"></a>
+    <ul class="nav__links">
+      <li><a href="index.html">Home</a></li><li><a href="about.html">About</a></li>
+      <li><a href="projects.html" class="active">Projects</a></li><li><a href="volunteer.html">Volunteer</a></li>
+      <li><a href="gallery.html">Gallery</a></li><li><a href="contact.html">Contact</a></li>
+    </ul>
+    <div class="nav__cta">
+      <a href="login.html" class="btn btn-outline btn-sm">Login</a>
+      <a href="donate.html" class="btn btn-primary btn-sm">Donate Now</a>
+    </div>
+  </div>
+</nav>
+
+<section class="proj-hero">
+  <div class="container">
+    <span class="section-label" style="color:rgba(255,255,255,0.45)">Our Initiatives</span>
+    <h1 class="animate-up">Projects That Create Real Change</h1>
+    <p class="animate-up delay-1">From food drives to skills development, each project is designed to address a specific community need with measurable impact.</p>
+    <a href="donate.html" class="btn btn-primary btn-lg animate-up delay-2" style="margin-top:28px">Support a Project</a>
+  </div>
+</section>
+
+<!-- TAB NAV -->
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav__inner">
+      <button class="tab-nav-btn active" onclick="switchTab('active',this)"><span class="icon icon--sm" data-icon="circle-active"></span> Active Projects</button>
+      <button class="tab-nav-btn" onclick="switchTab('past',this)"><span class="icon icon--sm" data-icon="check-circle"></span> Past Projects</button>
+    </div>
+  </div>
+</div>
+
+<!-- ACTIVE PROJECTS -->
+<section class="projects-section" id="tab-active">
+  <div class="container">
+    <div class="reveal">
+      <span class="section-label">Currently Running</span>
+      <h2 class="section-heading">Active Drives & Projects</h2>
+      <p class="section-sub">These projects are live right now — your support makes a direct difference today.</p>
+    </div>
+    <div class="projects-grid" id="activeGrid"></div>
+  </div>
+</section>
+
+<!-- PAST PROJECTS -->
+<section class="projects-section" id="tab-past" style="display:none">
+  <div class="container">
+    <div class="reveal">
+      <span class="section-label">Completed Initiatives</span>
+      <h2 class="section-heading">Past Projects</h2>
+      <p class="section-sub">Each completed project is a testament to what community action can achieve.</p>
+    </div>
+    <div class="past-grid" id="pastGrid"></div>
+  </div>
+</section>
+
+<!-- IMPACT BANNER -->
+<section class="impact-banner">
+  <div class="container">
+    <div class="reveal">
+      <h2>Want to Start a New Project?</h2>
+      <p>Have an idea for a community initiative? Partner with us and let's make it happen together.</p>
+      <a href="contact.html" class="btn btn-outline btn-lg">Get in Touch</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid"><div class="footer__brand"><a href="index.html" class="nav__logo"><img src="public/images/logo.png" alt="Big Little Things Foundation" class="nav__logo-img"></a><p>Empowering communities through youth-driven initiatives across South Africa.</p><div class="footer__social" style="margin-top:20px"><a href="https://www.instagram.com/biglittlethings.foundation?igsi=MTYyMGE0NzBtMTRicQ==" title="Instagram" target="_blank" rel="noopener">ig</a><a href="https://www.tiktok.com/@bltfoundation?_r=1&amp;_t=ZS-999eoTVYr5z" title="TikTok" target="_blank" rel="noopener">tk</a><a href="#" title="LinkedIn">in</a></div></div><div class="footer__col"><h4>Quick Links</h4><ul><li><a href="index.html">Home</a></li><li><a href="about.html">About Us</a></li><li><a href="projects.html">Projects</a></li><li><a href="gallery.html">Gallery</a></li></ul></div><div class="footer__col"><h4>Get Involved</h4><ul><li><a href="volunteer.html">Volunteer</a></li><li><a href="donate.html">Donate</a></li><li><a href="contact.html">Contact</a></li></ul></div><div class="footer__col"><h4>Contact</h4><ul><li><a href="tel:0810130522">Hloni: 081 013 0522</a></li><li><a href="tel:0725169605">Iman: 072 516 9605</a></li><li><a href="tel:0781626965">Chloe: 078 162 6965</a></li><li>South Africa</li></ul></div></div>
+    <div class="footer__bottom"><p>© 2025 Big Little Things Foundation. NPO Reg: 000/000/NPO</p></div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="public/js/icons.js"></script>
+<script src="public/js/config.js"></script>
+<script>
+const pastProjects = [
+  { name:'Second Drive', year:'2022', img:'public/images/gallery/second-drive-2022/drive2-01.jpeg', description:'Our second major outreach drive on 24 December 2022, bringing essential support to under-resourced communities.', stat:'Second sanitary pad drive completed', location:'South Africa' },
+  { name:'First Sanitary Pad Drive', year:'2021', img:'public/images/gallery/first-sanitary-pad-drive/pad-drive-01.jpeg', description:'Our founding drive distributing sanitary towels to young girls in Gauteng and the Free State — exceeding targets threefold.', stat:'First drive target exceeded 3×', location:'Gauteng & Free State' },
+];
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-nav-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-active').style.display = tab === 'active' ? 'block' : 'none';
+  document.getElementById('tab-past').style.display   = tab === 'past'   ? 'block' : 'none';
+}
+
+function renderActive() {
+  const projects = DB.get('projects').filter(p => p.status === 'active');
+  const imgs = ['public/images/gallery/first-sanitary-pad-drive/pad-drive-05.jpeg','public/images/gallery/second-drive-2022/drive2-04.jpeg','public/images/gallery/second-drive-2022/drive2-09.jpeg'];
+  const icons = { items:'package', blankets:'scarf', ZAR:'banknote' };
+  document.getElementById('activeGrid').innerHTML = projects.map((p,i) => {
+    const pct = Math.min(Math.round((p.collected/p.goal)*100),100);
+    const curr = p.unit==='ZAR' ? `R${Number(p.collected).toLocaleString()}` : `${p.collected} ${p.unit}`;
+    const goal = p.unit==='ZAR' ? `R${Number(p.goal).toLocaleString()}` : `${p.goal} ${p.unit}`;
+    const iconName = icons[p.unit] || 'target';
+    return `<div class="project-card reveal" style="animation-delay:${i*0.1}s">
+      <div class="project-card__img" style="background:url('${imgs[i%imgs.length]}') center/cover">
+        <div class="project-card__tag"><span class="badge badge-green">● Active</span></div>
+      </div>
+      <div class="project-card__body">
+        <h3 class="project-card__title icon-text">${Icons.render(iconName, 'icon icon--inline')}${p.name}</h3>
+        <div class="project-card__location icon-text">${Icons.render('map-pin', 'icon icon--inline')}${p.location}</div>
+        <p class="project-card__desc">${p.description}</p>
+        <div class="progress-wrap">
+          <div class="progress-info"><span>${curr} collected</span><span>Goal: ${goal}</span></div>
+          <div class="progress-bar"><div class="progress-fill" data-width="${pct}" style="width:0"></div></div>
+          <div style="font-size:0.8rem;color:var(--gray-400);margin-top:6px;text-align:right">${pct}% of goal reached</div>
+        </div>
+      </div>
+      <div class="project-card__footer">
+        <a href="donate.html" class="btn btn-primary" style="width:100%;justify-content:center">Donate to This Project</a>
+      </div>
+    </div>`;
+  }).join('');
+  setTimeout(() => {
+    document.querySelectorAll('.progress-fill[data-width]').forEach(b => { b.style.width = b.dataset.width + '%'; });
+  }, 300);
+}
+
+function renderPast() {
+  document.getElementById('pastGrid').innerHTML = pastProjects.map((p,i) => `
+    <div class="past-card reveal" style="animation-delay:${i*0.08}s">
+      <div class="past-card__img" style="background:url('${p.img}') center/cover"></div>
+      <div class="past-card__body">
+        <div class="past-card__year">${p.year} · ${p.location}</div>
+        <div class="past-card__title">${p.name}</div>
+        <p style="font-size:0.875rem;color:var(--gray-700);line-height:1.6">${p.description}</p>
+        <div class="past-card__stat icon-text">${Icons.render('check', 'icon icon--inline')} ${p.stat}</div>
+      </div>
+    </div>`).join('');
+}
+
+document.addEventListener('DOMContentLoaded', () => { renderActive(); renderPast(); });
+</script>
+</body>
+</html>

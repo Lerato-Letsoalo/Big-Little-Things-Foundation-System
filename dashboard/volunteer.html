@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Dashboard — Big Little Things Foundation</title>
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar__logo">
+    <div class="sidebar__logo-icon"><img src="../public/images/logo.png" alt="Big Little Things Foundation"></div>
+    Big <span>Little</span> Things
+  </div>
+  <div class="sidebar__user">
+    <div class="sidebar__user-name" id="sidebarName">Volunteer</div>
+    <div class="sidebar__user-role"><div class="sidebar__user-dot"></div> Volunteer Account</div>
+  </div>
+  <nav class="sidebar__nav">
+    <div class="sidebar__section-label">Main</div>
+    <a class="sidebar__link active" onclick="showPage('overview')">
+      <span class="icon" data-icon="home"></span> Overview
+    </a>
+    <a class="sidebar__link" onclick="showPage('hours')">
+      <span class="icon" data-icon="clock"></span> Log Hours
+    </a>
+    <a class="sidebar__link" onclick="showPage('certificates')">
+      <span class="icon" data-icon="graduation-cap"></span> My Certificates
+    </a>
+    <a class="sidebar__link" onclick="showPage('events')">
+      <span class="icon" data-icon="calendar"></span> Upcoming Events
+    </a>
+    <div class="sidebar__section-label">Account</div>
+    <a class="sidebar__link" onclick="showPage('profile')">
+      <span class="icon" data-icon="user"></span> My Profile
+    </a>
+  </nav>
+  <div class="sidebar__footer">
+    <a href="../index.html"><span class="icon" data-icon="globe"></span> Back to Website</a>
+    <a href="#" onclick="logOut()"><span class="icon" data-icon="log-out"></span> Sign Out</a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main-wrap">
+  <header class="top-header">
+    <h1 id="pageTitle">Overview</h1>
+    <div class="header-right">
+      <div class="header-search">
+        <span class="icon" data-icon="search"></span>
+        <input type="text" placeholder="Search...">
+      </div>
+      <button class="header-notif"><span class="icon" data-icon="bell"></span><span class="header-notif-dot"></span></button>
+      <div class="header-avatar" id="headerAvatar">VL</div>
+    </div>
+  </header>
+
+  <main class="page-content">
+
+    <!-- ── OVERVIEW PAGE ── -->
+    <div id="page-overview">
+      <div id="welcomeBanner" style="background:linear-gradient(120deg,var(--red),#7B0010);border-radius:var(--radius-lg);padding:28px 32px;color:white;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
+        <div>
+          <p style="color:rgba(255,255,255,0.7);font-size:0.85rem;margin-bottom:4px">Welcome back</p>
+          <h2 id="welcomeName" style="color:white;font-size:1.6rem">Volunteer</h2>
+          <p style="color:rgba(255,255,255,0.7);margin-top:6px;font-size:0.9rem">Keep making an impact — every hour counts.</p>
+        </div>
+        <button class="btn" onclick="showPage('hours')" style="background:rgba(255,255,255,0.15);color:white;border-color:rgba(255,255,255,0.3)">+ Log Hours</button>
+      </div>
+
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="stat-card__header">
+            <div class="stat-card__icon red"><span class="icon" data-icon="clock"></span></div>
+            <span class="stat-card__change up" id="statHoursChange">+0 this month</span>
+          </div>
+          <div class="stat-card__value" id="statHours">0</div>
+          <div class="stat-card__label">Total Hours Logged</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__header"><div class="stat-card__icon green"><span class="icon" data-icon="calendar"></span></div></div>
+          <div class="stat-card__value" id="statEvents">0</div>
+          <div class="stat-card__label">Events Attended</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__header"><div class="stat-card__icon blue"><span class="icon" data-icon="graduation-cap"></span></div></div>
+          <div class="stat-card__value" id="statCerts">0</div>
+          <div class="stat-card__label">Certificates Earned</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__header"><div class="stat-card__icon orange"><span class="icon" data-icon="medal"></span></div></div>
+          <div class="stat-card__value" id="statRank">—</div>
+          <div class="stat-card__label">Community Rank</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:24px">
+        <div class="panel">
+          <div class="panel__header">
+            <span class="panel__title">Recent Hours Logged</span>
+            <button class="btn btn-sm btn-outline" onclick="showPage('hours')">Log New Hours</button>
+          </div>
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Event</th><th>Date</th><th>Hours</th><th>Status</th></tr></thead>
+              <tbody id="recentHoursTable"><tr><td colspan="4"><div class="empty-state"><div class="empty-state__icon"><span class="icon icon--xl" data-icon="clipboard-list"></span></div><p>No hours logged yet. Log your first hours!</p></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel__header"><span class="panel__title">Upcoming Events</span></div>
+          <div id="overviewEvents" style="padding:16px;display:flex;flex-direction:column;gap:12px"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel__header"><span class="panel__title">Hours Progress to Next Certificate</span></div>
+        <div class="panel__body">
+          <div id="certProgress"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LOG HOURS PAGE ── -->
+    <div id="page-hours" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+        <div class="panel">
+          <div class="panel__header"><span class="panel__title">Log New Volunteer Hours</span></div>
+          <div class="panel__body">
+            <div class="form-group">
+              <label class="form-label">Event Name *</label>
+              <input type="text" class="form-control" id="logEvent" placeholder="e.g. Community Food Drive">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Date *</label>
+                <input type="date" class="form-control" id="logDate">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Hours Worked *</label>
+                <input type="number" class="form-control" id="logHours" placeholder="e.g. 4" min="0.5" max="24" step="0.5">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Location</label>
+              <input type="text" class="form-control" id="logLocation" placeholder="e.g. Pretoria Central">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Description / Notes</label>
+              <textarea class="form-control" id="logNotes" rows="3" placeholder="Briefly describe your contribution..."></textarea>
+            </div>
+            <button class="btn btn-primary btn-lg" style="width:100%;justify-content:center" onclick="submitHours()">Submit Hours for Approval</button>
+            <p style="font-size:0.78rem;color:var(--gray-400);text-align:center;margin-top:10px">Hours are reviewed by admin within 24 hours.</p>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel__header"><span class="panel__title">All My Hours</span></div>
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Event</th><th>Date</th><th>Hrs</th><th>Status</th></tr></thead>
+              <tbody id="allHoursTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CERTIFICATES PAGE ── -->
+    <div id="page-certificates" style="display:none">
+      <div class="panel" style="margin-bottom:24px">
+        <div class="panel__body" style="background:linear-gradient(120deg,#0D0D0D,#2C0008);border-radius:var(--radius-lg);padding:32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px">
+          <div>
+            <p style="color:rgba(255,255,255,0.55);font-size:0.85rem;margin-bottom:6px">CERTIFICATE MILESTONES</p>
+            <h3 style="color:white;font-size:1.4rem">Earn certificates at 10, 25, 50 & 100 hours</h3>
+            <p style="color:rgba(255,255,255,0.55);margin-top:8px;font-size:0.875rem">Certificates are automatically generated once your hours are approved and you reach a milestone.</p>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="text-align:center;background:rgba(255,255,255,0.06);padding:16px 20px;border-radius:var(--radius)"><div style="font-family:var(--font-display);font-size:1.5rem;font-weight:900;color:var(--red)">10h</div><div style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-top:4px">Bronze</div></div>
+            <div style="text-align:center;background:rgba(255,255,255,0.06);padding:16px 20px;border-radius:var(--radius)"><div style="font-family:var(--font-display);font-size:1.5rem;font-weight:900;color:#C0C0C0">25h</div><div style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-top:4px">Silver</div></div>
+            <div style="text-align:center;background:rgba(255,255,255,0.06);padding:16px 20px;border-radius:var(--radius)"><div style="font-family:var(--font-display);font-size:1.5rem;font-weight:900;color:#FFD700">50h</div><div style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-top:4px">Gold</div></div>
+            <div style="text-align:center;background:rgba(255,255,255,0.06);padding:16px 20px;border-radius:var(--radius)"><div style="font-family:var(--font-display);font-size:1.5rem;font-weight:900;color:#E5D3C0">100h</div><div style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-top:4px">Platinum</div></div>
+          </div>
+        </div>
+      </div>
+      <div id="certsList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px"></div>
+    </div>
+
+    <!-- ── EVENTS PAGE ── -->
+    <div id="page-events" style="display:none">
+      <div class="panel">
+        <div class="panel__header"><span class="panel__title">Upcoming Events</span></div>
+        <div id="eventsList" style="padding:24px;display:grid;gap:16px"></div>
+      </div>
+    </div>
+
+    <!-- ── PROFILE PAGE ── -->
+    <div id="page-profile" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:24px">
+        <div class="panel">
+          <div class="panel__body" style="text-align:center;padding:32px">
+            <div style="width:80px;height:80px;border-radius:50%;background:var(--red);color:white;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:700;margin:0 auto 16px" id="profileAvatar">VL</div>
+            <h3 id="profileName">Volunteer</h3>
+            <p style="color:var(--red);font-size:0.85rem;font-weight:600;margin-top:4px">Volunteer</p>
+            <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--gray-200)">
+              <div style="display:flex;justify-content:space-between;font-size:0.875rem;margin-bottom:8px"><span style="color:var(--gray-700)">Total Hours</span><span id="profileHours" style="font-weight:700">0</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:0.875rem;margin-bottom:8px"><span style="color:var(--gray-700)">Status</span><span class="badge badge-green">Active</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:0.875rem"><span style="color:var(--gray-700)">Member Since</span><span id="profileSince" style="font-weight:600">2025</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel__header"><span class="panel__title">Edit Profile</span></div>
+          <div class="panel__body">
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Full Name</label><input type="text" class="form-control" id="editName"></div>
+              <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-control" id="editEmail" disabled style="background:var(--gray-100)"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Phone</label><input type="tel" class="form-control" id="editPhone"></div>
+              <div class="form-group"><label class="form-label">City</label>
+                <select class="form-control" id="editCity">
+                  <option>Pretoria</option><option>Johannesburg</option><option>Soweto</option><option>Midrand</option><option>Centurion</option><option>Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group"><label class="form-label">Skills / Interests</label><input type="text" class="form-control" id="editSkills" placeholder="e.g. Cooking, Driving, Teaching"></div>
+            <div class="form-group"><label class="form-label">About Me</label><textarea class="form-control" id="editAbout" rows="3" placeholder="Tell us a bit about yourself..."></textarea></div>
+            <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../public/js/icons.js"></script>
+<script src="../public/js/config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+let currentUser = null;
+let userVolData = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const session = JSON.parse(localStorage.getItem('bltf_session') || 'null');
+  if (!session) { window.location.href = '../login.html'; return; }
+  if (session.role === 'admin') { window.location.href = 'admin.html'; return; }
+  currentUser = session;
+  loadUserData();
+  loadOverview();
+  loadEvents();
+});
+
+function loadUserData() {
+  const users = DB.get('users');
+  userVolData = users.find(u => u.id === currentUser.id) || currentUser;
+  const initials = (userVolData.name || 'VL').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('sidebarName').textContent = userVolData.name || currentUser.name;
+  document.getElementById('welcomeName').textContent = (userVolData.name || currentUser.name).split(' ')[0] + '!';
+  document.getElementById('headerAvatar').textContent = initials;
+  document.getElementById('profileAvatar').textContent = initials;
+  document.getElementById('profileName').textContent = userVolData.name || currentUser.name;
+  document.getElementById('editName').value = userVolData.name || '';
+  document.getElementById('editEmail').value = userVolData.email || '';
+  document.getElementById('editPhone').value = userVolData.phone || '';
+  document.getElementById('editSkills').value = userVolData.skills || '';
+  if (userVolData.city) document.getElementById('editCity').value = userVolData.city;
+}
+
+function loadOverview() {
+  const myHours = DB.get('volunteer_hours').filter(h => h.user_id === currentUser.id);
+  const approved = myHours.filter(h => h.status === 'approved');
+  const totalHours = approved.reduce((s,h) => s + parseFloat(h.hours||0), 0);
+  const thisMonth = approved.filter(h => new Date(h.date).getMonth() === new Date().getMonth()).reduce((s,h) => s+parseFloat(h.hours||0),0);
+
+  const certs = getCertificates(totalHours);
+
+  document.getElementById('statHours').textContent = totalHours;
+  document.getElementById('statHoursChange').textContent = `+${thisMonth} this month`;
+  document.getElementById('statEvents').textContent = new Set(approved.map(h=>h.event_name)).size;
+  document.getElementById('statCerts').textContent = certs.earned;
+  document.getElementById('statRank').textContent = getRank(totalHours);
+  document.getElementById('profileHours').textContent = totalHours;
+
+  // Recent hours table
+  const recentBody = document.getElementById('recentHoursTable');
+  if (myHours.length === 0) {
+    recentBody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-state__icon">${Icons.render('clipboard-list', 'icon icon--xl')}</div><p>No hours logged yet.</p></div></td></tr>`;
+  } else {
+    recentBody.innerHTML = myHours.slice(-5).reverse().map(h => `
+      <tr>
+        <td><strong>${h.event_name}</strong><br><small style="color:var(--gray-400)">${h.location||''}</small></td>
+        <td>${fmt.dateShort(h.date)}</td>
+        <td><strong>${h.hours}h</strong></td>
+        <td><span class="badge badge-${h.status==='approved'?'green':h.status==='rejected'?'red':'orange'}">${h.status}</span></td>
+      </tr>`).join('');
+  }
+
+  // Cert progress
+  const milestones = [10,25,50,100];
+  const nextMilestone = milestones.find(m => m > totalHours) || 100;
+  const prevMilestone = milestones.filter(m => m <= totalHours).pop() || 0;
+  const pct = Math.min(Math.round(((totalHours - prevMilestone)/(nextMilestone - prevMilestone))*100),100);
+  document.getElementById('certProgress').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div><span style="font-size:1.4rem;font-weight:900;color:var(--red)">${totalHours}</span> <span style="color:var(--gray-700);font-size:0.875rem">hours logged</span></div>
+      <div style="font-size:0.875rem;color:var(--gray-700)">Next milestone: <strong>${nextMilestone}h</strong></div>
+    </div>
+    <div class="progress-bar" style="height:12px"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <div style="font-size:0.8rem;color:var(--gray-400);margin-top:8px">${nextMilestone-totalHours} hours until your next certificate</div>`;
+}
+
+function loadEvents() {
+  const events = DB.get('events');
+  const list = document.getElementById('overviewEvents');
+  if (list) {
+    list.innerHTML = events.slice(0,3).map(ev => {
+      const d = new Date(ev.date);
+      return `<div style="display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:var(--radius);border:1px solid var(--gray-200)">
+        <div style="background:var(--red);color:white;border-radius:var(--radius);padding:8px 10px;text-align:center;flex-shrink:0;min-width:44px">
+          <div style="font-family:var(--font-display);font-size:1.2rem;font-weight:900;line-height:1">${d.getDate()}</div>
+          <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;opacity:0.85">${d.toLocaleString('en',{month:'short'})}</div>
+        </div>
+        <div>
+          <div style="font-weight:700;font-size:0.875rem">${ev.title}</div>
+          <div class="icon-text" style="font-size:0.78rem;color:var(--gray-400);margin-top:3px">${Icons.render('map-pin', 'icon icon--inline')}${ev.location}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  const fullList = document.getElementById('eventsList');
+  if (fullList) {
+    fullList.innerHTML = events.map(ev => {
+      const d = new Date(ev.date);
+      const spotsLeft = ev.slots - ev.filled;
+      return `<div style="display:flex;gap:20px;align-items:flex-start;padding:20px;border-radius:var(--radius-lg);border:1px solid var(--gray-200);background:var(--white);transition:var(--transition)">
+        <div style="background:var(--red);color:white;border-radius:var(--radius);padding:12px 16px;text-align:center;flex-shrink:0">
+          <div style="font-family:var(--font-display);font-size:1.6rem;font-weight:900;line-height:1">${d.getDate()}</div>
+          <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;opacity:0.85">${d.toLocaleString('en',{month:'short'})}</div>
+        </div>
+        <div style="flex:1">
+          <h3 style="font-size:1.05rem;margin-bottom:8px">${ev.title}</h3>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:0.82rem;color:var(--gray-700);margin-bottom:10px">
+            <span class="icon-text">${Icons.render('map-pin', 'icon icon--inline')}${ev.location}</span>
+            <span class="icon-text">${Icons.render('users', 'icon icon--inline')}${spotsLeft} spots left</span>
+          </div>
+          <p style="font-size:0.875rem;color:var(--gray-700)">${ev.description}</p>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="joinEvent('${ev.id}','${ev.title}')">Join Event</button>
+      </div>`;
+    }).join('');
+  }
+}
+
+function loadAllHours() {
+  const myHours = DB.get('volunteer_hours').filter(h => h.user_id === currentUser.id);
+  const body = document.getElementById('allHoursTable');
+  if (!body) return;
+  if (myHours.length === 0) {
+    body.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-state__icon">${Icons.render('clock', 'icon icon--xl')}</div><p>No hours logged yet.</p></div></td></tr>`;
+    return;
+  }
+  body.innerHTML = myHours.reverse().map(h => `
+    <tr>
+      <td><strong>${h.event_name}</strong></td>
+      <td>${fmt.dateShort(h.date)}</td>
+      <td><strong>${h.hours}h</strong></td>
+      <td><span class="badge badge-${h.status==='approved'?'green':h.status==='rejected'?'red':'orange'}">${h.status}</span></td>
+    </tr>`).join('');
+}
+
+function loadCertificates() {
+  const myHours = DB.get('volunteer_hours').filter(h => h.user_id === currentUser.id && h.status === 'approved');
+  const totalHours = myHours.reduce((s,h) => s+parseFloat(h.hours||0),0);
+  const milestones = [{h:10,label:'Bronze',color:'#D0021B'},{h:25,label:'Silver',color:'#FFFFFF'},{h:50,label:'Gold',color:'#D0021B'},{h:100,label:'Platinum',color:'#FFFFFF'}];
+  const earned = milestones.filter(m => totalHours >= m.h);
+  const list = document.getElementById('certsList');
+  if (earned.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-state__icon">${Icons.render('graduation-cap', 'icon icon--xl')}</div><h3>No certificates yet</h3><p>Log 10 approved hours to earn your first certificate!</p><button class="btn btn-primary" style="margin-top:16px" onclick="showPage('hours')">Log Hours</button></div>`;
+    return;
+  }
+  list.innerHTML = earned.map(m => `
+    <div style="background:linear-gradient(135deg,#0D0D0D,#1A1A1A);border-radius:var(--radius-lg);padding:32px;border:1px solid rgba(255,255,255,0.08);position:relative;overflow:hidden">
+      <img src="../public/images/logo.png" alt="Big Little Things Foundation" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid #D0021B;margin-bottom:18px">
+      <div style="position:absolute;top:-20px;right:-20px;opacity:0.06">${Icons.render('graduation-cap', 'icon icon--xl')}</div>
+      <div style="font-size:0.75rem;color:rgba(255,255,255,0.4);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:12px">Certificate of Volunteering</div>
+      <div style="font-family:var(--font-display);font-size:1.5rem;font-weight:700;color:${m.color}">${m.label} Volunteer</div>
+      <div style="color:rgba(255,255,255,0.6);font-size:0.875rem;margin-top:8px">Awarded to <strong style="color:white">${currentUser.name}</strong> for completing <strong style="color:${m.color}">${m.h}+ volunteer hours</strong></div>
+      <div style="color:rgba(255,255,255,0.35);font-size:0.78rem;margin-top:6px">Big Little Things Foundation · 2025</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:20px">
+        <button class="btn" onclick="downloadCertificate('${m.label}','${m.h}','png')" style="background:var(--red);color:#fff;border-color:var(--red);font-weight:700">${Icons.render('download', 'icon icon--sm')} PNG</button>
+        <button class="btn" onclick="downloadCertificate('${m.label}','${m.h}','pdf')" style="background:#fff;color:#000;border-color:#fff;font-weight:700">${Icons.render('download', 'icon icon--sm')} PDF</button>
+      </div>
+    </div>`).join('');
+}
+
+function getCertificates(hours) {
+  const milestones = [10,25,50,100];
+  return { earned: milestones.filter(m => hours >= m).length, next: milestones.find(m => m > hours) || null };
+}
+function getRank(hours) {
+  if (hours >= 100) return 'Platinum';
+  if (hours >= 50) return 'Gold';
+  if (hours >= 25) return 'Silver';
+  if (hours >= 10) return 'Bronze';
+  return 'Newcomer';
+}
+
+function submitHours() {
+  const event = document.getElementById('logEvent').value.trim();
+  const date  = document.getElementById('logDate').value;
+  const hours = Number(document.getElementById('logHours').value);
+  const location = document.getElementById('logLocation').value.trim();
+  const notes = document.getElementById('logNotes').value.trim();
+  if (!event) { Toast.error('Please enter the event name.'); return; }
+  if (!date) { Toast.error('Please select the date.'); return; }
+  if (!Number.isFinite(hours) || hours < 0.5 || hours > 24) { Toast.error('Please enter between 0.5 and 24 hours.'); return; }
+  if (new Date(`${date}T00:00:00`) > new Date()) { Toast.error('Hours cannot be logged for a future date.'); return; }
+  DB.insert('volunteer_hours', { user_id: currentUser.id, event_name: event, date, hours, location, notes, status: 'pending' });
+  Toast.success('Hours submitted! Pending admin approval.');
+  document.getElementById('logEvent').value = '';
+  document.getElementById('logDate').value = '';
+  document.getElementById('logHours').value = '';
+  document.getElementById('logLocation').value = '';
+  document.getElementById('logNotes').value = '';
+  loadAllHours();
+  loadOverview();
+}
+
+function joinEvent(id, title) {
+  Toast.success(`You've signed up for "${title}"! Check your email for confirmation.`);
+}
+
+function saveProfile() {
+  const users = DB.get('users');
+  const idx = users.findIndex(u => u.id === currentUser.id);
+  if (idx !== -1) {
+    users[idx].name  = document.getElementById('editName').value;
+    users[idx].phone = document.getElementById('editPhone').value;
+    users[idx].city  = document.getElementById('editCity').value;
+    users[idx].skills= document.getElementById('editSkills').value;
+    DB.set('users', users);
+    currentUser.name = users[idx].name;
+    localStorage.setItem('bltf_session', JSON.stringify(currentUser));
+    loadUserData();
+    Toast.success('Profile updated successfully!');
+  }
+}
+
+async function downloadCertificate(level, hours, format) {
+  const logo = document.querySelector('.sidebar__logo-icon img');
+  if (!logo?.complete) await new Promise(resolve => { logo.onload = resolve; logo.onerror = resolve; });
+  const canvas = document.createElement('canvas');
+  canvas.width = 1600; canvas.height = 1120;
+  const context = canvas.getContext('2d');
+  context.fillStyle = '#FAFAF8'; context.fillRect(0, 0, canvas.width, canvas.height);
+  context.strokeStyle = '#D0021B'; context.lineWidth = 18; context.strokeRect(30, 30, 1540, 1060);
+  context.strokeStyle = 'rgba(208,2,27,0.25)'; context.lineWidth = 3; context.strokeRect(58, 58, 1484, 1004);
+  context.fillStyle = '#D0021B'; context.beginPath(); context.arc(800, 180, 72, 0, Math.PI * 2); context.fill();
+  if (logo) { context.save(); context.beginPath(); context.arc(800, 180, 58, 0, Math.PI * 2); context.clip(); context.drawImage(logo, 742, 122, 116, 116); context.restore(); }
+  const centerText = (text, y, size, color, family = 'DM Sans') => { context.font = `${size}px ${family}`; context.fillStyle = color; context.textAlign = 'center'; context.fillText(text, 800, y); };
+  centerText('BIG LITTLE THINGS FOUNDATION · NPO', 315, 24, '#777', 'DM Sans');
+  centerText('CERTIFICATE OF VOLUNTEER SERVICE', 390, 30, '#D0021B', 'DM Sans');
+  centerText('This is to certify that', 460, 22, '#777');
+  centerText(currentUser.name, 550, 62, '#0D0D0D', 'Playfair Display');
+  centerText(`${level} Volunteer · ${hours}+ Hours`, 625, 34, '#D0021B', 'Playfair Display');
+  centerText('has demonstrated outstanding commitment to community service', 710, 23, '#555');
+  centerText(`and completed ${hours}+ hours of volunteer work.`, 748, 23, '#555');
+  context.strokeStyle = '#DDD'; context.lineWidth = 2; context.beginPath(); context.moveTo(250, 870); context.lineTo(1350, 870); context.stroke();
+  context.textAlign = 'center'; context.font = '20px DM Sans'; context.fillStyle = '#555'; context.fillText('Nomsa Dlamini · Executive Director', 400, 925); context.fillText('Sipho Nkosi · Volunteer Coordinator', 1200, 925);
+  context.fillStyle = '#999'; context.font = '18px DM Sans'; context.fillText(`Issued ${new Date().toLocaleDateString('en-ZA')} · BLTF/${new Date().getFullYear()}`, 800, 1010);
+  const imageUrl = canvas.toDataURL('image/png');
+  const filename = `BLTF-${level}-Certificate-${currentUser.name.replace(/\s+/g, '-')}`;
+  if (format === 'png') {
+    const link = document.createElement('a'); link.href = imageUrl; link.download = `${filename}.png`; link.click();
+    return;
+  }
+  if (window.jspdf?.jsPDF) {
+    const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'px', format: [1600, 1120] });
+    pdf.addImage(imageUrl, 'PNG', 0, 0, 1600, 1120); pdf.save(`${filename}.pdf`);
+  } else {
+    Toast.error('PDF download is unavailable while offline. Please try again when connected.');
+  }
+}
+
+function showPage(page) {
+  const pages = ['overview','hours','certificates','events','profile'];
+  pages.forEach(p => {
+    const el = document.getElementById(`page-${p}`);
+    if (el) el.style.display = p === page ? 'block' : 'none';
+  });
+  document.querySelectorAll('.sidebar__link').forEach(l => l.classList.remove('active'));
+  const titles = { overview:'Overview', hours:'Log Hours', certificates:'My Certificates', events:'Upcoming Events', profile:'My Profile' };
+  document.getElementById('pageTitle').textContent = titles[page] || page;
+  const idx = ['overview','hours','certificates','events','profile'].indexOf(page);
+  const links = document.querySelectorAll('.sidebar__link');
+  if (links[idx]) links[idx].classList.add('active');
+  if (page === 'hours') loadAllHours();
+  if (page === 'certificates') loadCertificates();
+}
+
+function logOut() {
+  localStorage.removeItem('bltf_session');
+  window.location.href = '../login.html';
+}
+</script>
+</body>
+</html>

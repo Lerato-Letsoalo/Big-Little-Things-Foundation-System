@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — Big Little Things Foundation</title>
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar__logo">
+    <div class="sidebar__logo-icon"><img src="../public/images/logo.png" alt="Big Little Things Foundation"></div>
+    Big <span>Little</span> Things
+  </div>
+  <div class="sidebar__user">
+    <div class="sidebar__user-name" id="sidebarName">Admin</div>
+    <div class="sidebar__user-role"><div class="sidebar__user-dot"></div> Director / Admin</div>
+  </div>
+  <nav class="sidebar__nav">
+    <div class="sidebar__section-label">Overview</div>
+    <a class="sidebar__link active" onclick="showPage('overview')"><span class="icon" data-icon="bar-chart"></span> Dashboard</a>
+
+    <div class="sidebar__section-label">Management</div>
+    <a class="sidebar__link" onclick="showPage('volunteers')"><span class="icon" data-icon="users"></span> Volunteers <span class="badge-count" id="pendingBadge">0</span></a>
+    <a class="sidebar__link" onclick="showPage('hours')"><span class="icon" data-icon="clock"></span> Hour Approvals <span class="badge-count" id="hoursBadge">0</span></a>
+    <a class="sidebar__link" onclick="showPage('donations')"><span class="icon" data-icon="banknote"></span> Donations</a>
+    <a class="sidebar__link" onclick="showPage('events')"><span class="icon" data-icon="calendar"></span> Events</a>
+    <a class="sidebar__link" onclick="showPage('projects')"><span class="icon" data-icon="target"></span> Projects</a>
+    <a class="sidebar__link" onclick="showPage('gallery')"><span class="icon" data-icon="image"></span> Gallery</a>
+
+    <div class="sidebar__section-label">Reports</div>
+    <a class="sidebar__link" onclick="showPage('reports')"><span class="icon" data-icon="file-text"></span> Reports</a>
+  </nav>
+  <div class="sidebar__footer">
+    <a href="../index.html"><span class="icon" data-icon="globe"></span> View Website</a>
+    <a href="#" onclick="logOut()"><span class="icon" data-icon="log-out"></span> Sign Out</a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main-wrap">
+  <header class="top-header">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <h1 id="pageTitle">Admin Dashboard</h1>
+      <span style="display:inline-flex;align-items:center;padding:6px 12px;border-radius:999px;background:#D0021B;color:#fff;font-size:0.85rem;font-weight:700;letter-spacing:0.02em">ADMIN</span>
+    </div>
+    <div class="header-right">
+      <div class="header-search"><span class="icon" data-icon="search"></span><input type="text" placeholder="Search..." id="globalSearch" oninput="handleSearch(this.value)"></div>
+      <button class="header-notif"><span class="icon" data-icon="bell"></span><span class="header-notif-dot"></span></button>
+      <div class="header-avatar">AD</div>
+    </div>
+  </header>
+
+  <main class="page-content">
+
+    <!-- ── OVERVIEW ── -->
+    <div id="page-overview">
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="stat-card__header"><div class="stat-card__icon red"><span class="icon" data-icon="users"></span></div><span class="stat-card__change up" id="volChangeLabel">All time</span></div>
+          <div class="stat-card__value" id="statVols">0</div>
+          <div class="stat-card__label">Total Volunteers</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__header"><div class="stat-card__icon green"><span class="icon" data-icon="banknote"></span></div></div>
+          <div class="stat-card__value" id="statDons">R0</div>
+          <div class="stat-card__label">Total Donations</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__header"><div class="stat-card__icon blue"><span class="icon" data-icon="target"></span></div></div>
+          <div class="stat-card__value" id="statProjs">0</div>
+          <div class="stat-card__label">Active Projects</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__header"><div class="stat-card__icon orange"><span class="icon" data-icon="calendar"></span></div></div>
+          <div class="stat-card__value" id="statEvts">0</div>
+          <div class="stat-card__label">Upcoming Events</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:24px">
+        <!-- Recent Activity -->
+        <div class="panel">
+          <div class="panel__header"><span class="panel__title">Pending Hour Approvals</span>
+            <button class="btn btn-sm btn-primary" onclick="showPage('hours')">View All</button>
+          </div>
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Volunteer</th><th>Event</th><th>Hours</th><th>Action</th></tr></thead>
+              <tbody id="pendingHoursTable"></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- New Volunteers -->
+        <div class="panel">
+          <div class="panel__header"><span class="panel__title">New Registrations</span><button class="btn btn-sm btn-outline" onclick="showPage('volunteers')">View All</button></div>
+          <div id="newVolsList" style="padding:16px;display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+        <!-- Recent Donations -->
+        <div class="panel">
+          <div class="panel__header"><span class="panel__title">Recent Donations</span><button class="btn btn-sm btn-outline" onclick="showPage('donations')">View All</button></div>
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Donor</th><th>Type</th><th>Amount</th><th>Date</th></tr></thead>
+              <tbody id="recentDonsTable"></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- Project Progress -->
+        <div class="panel">
+          <div class="panel__header"><span class="panel__title">Project Progress</span></div>
+          <div id="projectProgress" style="padding:16px;display:flex;flex-direction:column;gap:16px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VOLUNTEERS ── -->
+    <div id="page-volunteers" style="display:none">
+      <div class="panel">
+        <div class="panel__header">
+          <span class="panel__title">All Volunteers</span>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <select class="form-control" style="width:160px;padding:8px 12px;font-size:0.85rem" id="volFilter" onchange="renderVolunteers()">
+              <option value="all">All Status</option>
+              <option value="approved">Approved</option>
+              <option value="pending">Pending</option>
+            </select>
+          </div>
+        </div>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Volunteer</th><th>City</th><th>Total Hours</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+            <tbody id="volunteersTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── HOUR APPROVALS ── -->
+    <div id="page-hours" style="display:none">
+      <div class="panel">
+        <div class="panel__header"><span class="panel__title">Volunteer Hour Submissions</span></div>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Volunteer</th><th>Event</th><th>Date</th><th>Hours</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="allHoursTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── DONATIONS ── -->
+    <div id="page-donations" style="display:none">
+      <div class="stat-cards" style="grid-template-columns:repeat(3,1fr);margin-bottom:0">
+        <div class="stat-card"><div class="stat-card__header"><div class="stat-card__icon green"><span class="icon" data-icon="banknote"></span></div></div><div class="stat-card__value" id="totalMoneyDon">R0</div><div class="stat-card__label">Cash Donations</div></div>
+        <div class="stat-card"><div class="stat-card__header"><div class="stat-card__icon orange"><span class="icon" data-icon="package"></span></div></div><div class="stat-card__value" id="totalItemDon">0</div><div class="stat-card__label">Item Donations</div></div>
+        <div class="stat-card"><div class="stat-card__header"><div class="stat-card__icon blue"><span class="icon" data-icon="handshake"></span></div></div><div class="stat-card__value" id="totalDonors">0</div><div class="stat-card__label">Total Donors</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel__header"><span class="panel__title">All Donations</span>
+          <button class="btn btn-sm btn-primary" onclick="showAddDonationModal()">+ Log Donation</button>
+        </div>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Donor</th><th>Type</th><th>Amount/Item</th><th>City</th><th>Date</th><th>Message</th></tr></thead>
+            <tbody id="donationsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── EVENTS ── -->
+    <div id="page-events" style="display:none">
+      <div class="panel">
+        <div class="panel__header"><span class="panel__title">Event Management</span>
+          <button class="btn btn-primary btn-sm" onclick="Modal.open('addEventModal')">+ Create Event</button>
+        </div>
+        <div id="eventsAdminGrid" style="padding:24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px"></div>
+      </div>
+    </div>
+
+    <!-- ── PROJECTS ── -->
+    <div id="page-projects" style="display:none">
+      <div class="panel">
+        <div class="panel__header"><span class="panel__title">Project Management</span>
+          <button class="btn btn-primary btn-sm" onclick="Modal.open('addProjectModal')">+ Add Project</button>
+        </div>
+        <div id="projectsAdminGrid" style="padding:24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px"></div>
+      </div>
+    </div>
+
+    <!-- ── GALLERY ── -->
+    <div id="page-gallery" style="display:none">
+      <div class="panel">
+        <div class="panel__header"><span class="panel__title">Gallery Management</span></div>
+        <div class="panel__body">
+          <div id="galleryDropZone" style="border:2px dashed var(--gray-200);border-radius:var(--radius-lg);padding:48px;text-align:center;background:var(--gray-100)">
+            <div style="margin-bottom:16px"><span class="icon icon--xl" data-icon="camera"></span></div>
+            <h3 style="margin-bottom:8px">Upload Photos</h3>
+            <p style="color:var(--gray-700);margin-bottom:20px">Drag and drop images or choose files from this device. JPG, PNG, WebP, and GIF up to 5MB each.</p>
+            <input type="file" id="galleryFileInput" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden>
+            <button class="btn btn-primary" onclick="document.getElementById('galleryFileInput').click()">Select Photos</button>
+            <p id="galleryUploadStatus" style="font-size:0.8rem;color:var(--gray-400);margin-top:12px" aria-live="polite"></p>
+          </div>
+          <div id="galleryAdminGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-top:24px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── REPORTS ── -->
+    <div id="page-reports" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+        <div class="panel">
+          <div class="panel__header"><span class="panel__title">Generate Reports</span></div>
+          <div class="panel__body" style="display:flex;flex-direction:column;gap:16px">
+            <div style="padding:20px;border:1px solid var(--gray-200);border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:space-between">
+              <div><h4>Volunteer Hours Report</h4><p style="font-size:0.82rem;margin-top:4px">All approved volunteer hours by volunteer</p></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-outline btn-sm" onclick="generateReport('hours','excel')">Excel</button>
+                <button class="btn btn-primary btn-sm" onclick="generateReport('hours','pdf')">PDF</button>
+              </div>
+            </div>
+            <div style="padding:20px;border:1px solid var(--gray-200);border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:space-between">
+              <div><h4>Donation Summary Report</h4><p style="font-size:0.82rem;margin-top:4px">All donations, types, and totals</p></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-outline btn-sm" onclick="generateReport('donations','excel')">Excel</button>
+                <button class="btn btn-primary btn-sm" onclick="generateReport('donations','pdf')">PDF</button>
+              </div>
+            </div>
+            <div style="padding:20px;border:1px solid var(--gray-200);border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:space-between">
+              <div><h4>Event Participation Report</h4><p style="font-size:0.82rem;margin-top:4px">Attendance and participation per event</p></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-outline btn-sm" onclick="generateReport('events','excel')">Excel</button>
+                <button class="btn btn-primary btn-sm" onclick="generateReport('events','pdf')">PDF</button>
+              </div>
+            </div>
+            <div style="padding:20px;border:1px solid var(--gray-200);border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:space-between">
+              <div><h4>Full Impact Report</h4><p style="font-size:0.82rem;margin-top:4px">Complete organisational overview</p></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-outline btn-sm" onclick="generateReport('impact','excel')">Excel</button>
+                <button class="btn btn-primary btn-sm" onclick="generateReport('impact','pdf')">PDF</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel__header"><span class="panel__title">Quick Stats Summary</span></div>
+          <div class="panel__body" id="quickStats"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── MODALS ── -->
+<!-- Add Event -->
+<div class="modal-overlay" id="addEventModal">
+  <div class="modal">
+    <button class="modal__close" data-modal-close><span class="icon" data-icon="x"></span></button>
+    <h3 class="modal__title">Create New Event</h3>
+    <div class="form-group"><label class="form-label">Event Name *</label><input type="text" class="form-control" id="evName" placeholder="Community Food Drive"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Date *</label><input type="date" class="form-control" id="evDate"></div>
+      <div class="form-group"><label class="form-label">Location *</label><input type="text" class="form-control" id="evLocation" placeholder="Pretoria Central"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Volunteer Slots</label><input type="number" class="form-control" id="evSlots" placeholder="30" min="1"></div>
+      <div class="form-group"><label class="form-label">Time</label><input type="time" class="form-control" id="evTime"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Description</label><textarea class="form-control" id="evDesc" rows="3" placeholder="Event details..."></textarea></div>
+    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px">
+      <button class="btn btn-outline" data-modal-close>Cancel</button>
+      <button class="btn btn-primary" onclick="createAdminEvent()">Create Event</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Project -->
+<div class="modal-overlay" id="addProjectModal">
+  <div class="modal">
+    <button class="modal__close" data-modal-close><span class="icon" data-icon="x"></span></button>
+    <h3 class="modal__title">Add New Project</h3>
+    <div class="form-group"><label class="form-label">Project Name *</label><input type="text" class="form-control" id="prjName" placeholder="Winter Blanket Drive 2025"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Goal Amount</label><input type="number" class="form-control" id="prjGoal" placeholder="500"></div>
+      <div class="form-group"><label class="form-label">Unit</label>
+        <select class="form-control" id="prjUnit"><option value="items">Items</option><option value="ZAR">Rands (ZAR)</option><option value="blankets">Blankets</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Start Date</label><input type="date" class="form-control" id="prjStart"></div>
+      <div class="form-group"><label class="form-label">Location</label><input type="text" class="form-control" id="prjLocation" placeholder="Gauteng"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Description</label><textarea class="form-control" id="prjDesc" rows="3"></textarea></div>
+    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px">
+      <button class="btn btn-outline" data-modal-close>Cancel</button>
+      <button class="btn btn-primary" onclick="createProject()">Add Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Donation -->
+<div class="modal-overlay" id="addDonationModal">
+  <div class="modal">
+    <button class="modal__close" data-modal-close><span class="icon" data-icon="x"></span></button>
+    <h3 class="modal__title">Log Manual Donation</h3>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Donor Name *</label><input type="text" class="form-control" id="dnName"></div>
+      <div class="form-group"><label class="form-label">Type *</label>
+        <select class="form-control" id="dnType"><option value="money">Money</option><option value="food">Food</option><option value="clothing">Clothing</option><option value="sanitary">Sanitary</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Amount/Qty</label><input type="text" class="form-control" id="dnAmount" placeholder="e.g. 500 or 10kg rice"></div>
+      <div class="form-group"><label class="form-label">City</label><input type="text" class="form-control" id="dnCity"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Date *</label><input type="date" class="form-control" id="dnDate"></div>
+    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px">
+      <button class="btn btn-outline" data-modal-close>Cancel</button>
+      <button class="btn btn-primary" onclick="logDonation()">Log Donation</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../public/js/icons.js"></script>
+<script src="../public/js/config.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const session = JSON.parse(localStorage.getItem('bltf_session') || 'null');
+  if (!session) { window.location.href = '../login.html'; return; }
+  if (session.role !== 'admin') { window.location.href = 'volunteer.html'; return; }
+  document.getElementById('sidebarName').textContent = session.name || 'Admin';
+  loadOverview();
+  updateBadges();
+});
+
+function updateBadges() {
+  const pendingVols = DB.get('volunteers').filter(v => v.status === 'pending').length;
+  const pendingHours = DB.get('volunteer_hours').filter(h => h.status === 'pending').length;
+  const pb = document.getElementById('pendingBadge');
+  const hb = document.getElementById('hoursBadge');
+  if (pb) pb.textContent = pendingVols > 0 ? pendingVols : '';
+  if (pb) pb.style.display = pendingVols > 0 ? 'inline-block' : 'none';
+  if (hb) hb.textContent = pendingHours > 0 ? pendingHours : '';
+  if (hb) hb.style.display = pendingHours > 0 ? 'inline-block' : 'none';
+}
+
+function loadOverview() {
+  const volunteers = DB.get('volunteers');
+  const donations = DB.get('donations');
+  const projects = DB.get('projects');
+  const events = DB.get('events');
+  const allHours = DB.get('volunteer_hours');
+
+  const moneyDons = donations.filter(d => d.type === 'money').reduce((s,d) => s + (parseFloat(d.amount)||0), 0);
+
+  document.getElementById('statVols').textContent = volunteers.length;
+  document.getElementById('statDons').textContent = 'R' + moneyDons.toLocaleString();
+  document.getElementById('statProjs').textContent = projects.filter(p => p.status === 'active').length;
+  document.getElementById('statEvts').textContent = events.length;
+
+  // Pending hours
+  const pending = allHours.filter(h => h.status === 'pending');
+  const users = DB.get('users');
+  const phTable = document.getElementById('pendingHoursTable');
+  if (phTable) {
+    if (pending.length === 0) {
+      phTable.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--gray-400)">No pending approvals</td></tr>`;
+    } else {
+      phTable.innerHTML = pending.slice(0,5).map(h => {
+        const user = users.find(u => u.id === h.user_id);
+        return `<tr>
+          <td><div style="font-weight:600">${user?.name||'Unknown'}</div></td>
+          <td>${h.event_name}</td>
+          <td><strong>${h.hours}h</strong></td>
+          <td>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-sm" style="background:#DCFCE7;color:#16A34A;border:none;padding:5px 10px" onclick="approveHours('${h.id}')">${Icons.render('check', 'icon icon--sm')}</button>
+              <button class="btn btn-sm btn-danger" onclick="rejectHours('${h.id}')">${Icons.render('x', 'icon icon--sm')}</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+  }
+
+  // New volunteers
+  const newVols = document.getElementById('newVolsList');
+  if (newVols) {
+    const recent = volunteers.slice(-4).reverse();
+    newVols.innerHTML = recent.length === 0 ? '<p style="color:var(--gray-400);font-size:0.875rem;padding:12px">No volunteers yet.</p>' :
+      recent.map(v => `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:var(--radius);border:1px solid var(--gray-200)">
+          <div class="avatar">${(v.name||'V').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:0.875rem">${v.name}</div>
+            <div style="font-size:0.78rem;color:var(--gray-400)">${v.city||''}</div>
+          </div>
+          <span class="badge badge-${v.status==='approved'?'green':'orange'}">${v.status}</span>
+        </div>`).join('');
+  }
+
+  // Recent donations table
+  const rdTable = document.getElementById('recentDonsTable');
+  if (rdTable) {
+    rdTable.innerHTML = donations.slice(-5).reverse().map(d => `
+      <tr>
+        <td><strong>${d.donor_name}</strong></td>
+        <td><span class="badge badge-${d.type==='money'?'green':'blue'}">${d.type}</span></td>
+        <td>${d.type==='money'?'R'+d.amount:d.item_description||'—'}</td>
+        <td>${fmt.dateShort(d.date||d.created_at)}</td>
+      </tr>`).join('') || `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--gray-400)">No donations yet.</td></tr>`;
+  }
+
+  // Project progress
+  const pp = document.getElementById('projectProgress');
+  if (pp) {
+    pp.innerHTML = projects.filter(p=>p.status==='active').map(p => {
+      const pct = Math.min(Math.round((p.collected/p.goal)*100),100);
+      return `<div>
+        <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:600;margin-bottom:6px">
+          <span>${p.name}</span><span style="color:var(--red)">${pct}%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div style="font-size:0.75rem;color:var(--gray-400);margin-top:4px">${p.collected}/${p.goal} ${p.unit}</div>
+      </div>`;
+    }).join('');
+  }
+}
+
+function renderVolunteers() {
+  const filter = document.getElementById('volFilter')?.value || 'all';
+  const volunteers = DB.get('volunteers');
+  const allHours = DB.get('volunteer_hours').filter(h => h.status === 'approved');
+  const filtered = filter === 'all' ? volunteers : volunteers.filter(v => v.status === filter);
+  const tbody = document.getElementById('volunteersTable');
+  if (!tbody) return;
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state__icon">${Icons.render('users', 'icon icon--xl')}</div><p>No volunteers found.</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = filtered.map(v => {
+    const hours = allHours.filter(h => h.user_id === v.user_id).reduce((s,h) => s+parseFloat(h.hours||0),0);
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="width:32px;height:32px;font-size:0.75rem">${(v.name||'V').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</div><div><div style="font-weight:600">${v.name}</div><div style="font-size:0.78rem;color:var(--gray-400)">${v.email}</div></div></div></td>
+      <td>${v.city||'—'}</td>
+      <td><strong>${hours}h</strong></td>
+      <td><span class="badge badge-${v.status==='approved'?'green':v.status==='pending'?'orange':'red'}">${v.status}</span></td>
+      <td>${fmt.dateShort(v.created_at||new Date().toISOString())}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          ${v.status==='pending' ? `<button class="btn btn-sm" style="background:#DCFCE7;color:#16A34A;border:none" onclick="approveVolunteer('${v.id}')">Approve</button>` : ''}
+          <button class="btn btn-sm btn-danger" onclick="deleteVolunteer('${v.id}')">Remove</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderAllHours() {
+  const allHours = DB.get('volunteer_hours');
+  const users = DB.get('users');
+  const tbody = document.getElementById('allHoursTable');
+  if (!tbody) return;
+  if (allHours.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state__icon">${Icons.render('clock', 'icon icon--xl')}</div><p>No hours submitted yet.</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = allHours.slice().reverse().map(h => {
+    const user = users.find(u => u.id === h.user_id);
+    return `<tr>
+      <td><strong>${user?.name||'Unknown'}</strong></td>
+      <td>${h.event_name}</td>
+      <td>${fmt.dateShort(h.date)}</td>
+      <td><strong>${h.hours}h</strong></td>
+      <td><span class="badge badge-${h.status==='approved'?'green':h.status==='rejected'?'red':'orange'}">${h.status}</span></td>
+      <td>
+        ${h.status==='pending' ? `
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-sm" style="background:#DCFCE7;color:#16A34A;border:none" onclick="approveHours('${h.id}')">Approve</button>
+            <button class="btn btn-sm btn-danger" onclick="rejectHours('${h.id}')">Reject</button>
+          </div>` : `<span style="font-size:0.8rem;color:var(--gray-400)">Reviewed</span>`}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderDonations() {
+  const donations = DB.get('donations');
+  const money = donations.filter(d=>d.type==='money').reduce((s,d)=>s+(parseFloat(d.amount)||0),0);
+  const items = donations.filter(d=>d.type!=='money').length;
+  document.getElementById('totalMoneyDon').textContent = 'R' + money.toLocaleString();
+  document.getElementById('totalItemDon').textContent = items;
+  document.getElementById('totalDonors').textContent = new Set(donations.map(d=>d.donor_name)).size;
+  const tbody = document.getElementById('donationsTable');
+  if (!tbody) return;
+  tbody.innerHTML = donations.slice().reverse().map(d => `
+    <tr>
+      <td><strong>${d.donor_name}</strong>${d.anonymous?'<br><span style="font-size:0.75rem;color:var(--gray-400)">Anonymous</span>':''}</td>
+      <td><span class="badge badge-${d.type==='money'?'green':d.type==='food'?'orange':'blue'}">${d.type}</span></td>
+      <td>${d.type==='money'?'<strong>R'+d.amount+'</strong>':(d.item_description||'—')}</td>
+      <td>${d.city||'—'}</td>
+      <td>${fmt.dateShort(d.date||d.created_at)}</td>
+      <td style="max-width:180px;font-size:0.82rem;color:var(--gray-700)">${d.message||'—'}</td>
+    </tr>`).join('') || `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--gray-400)">No donations yet.</td></tr>`;
+}
+
+function renderEvents() {
+  const events = DB.get('events');
+  const grid = document.getElementById('eventsAdminGrid');
+  if (!grid) return;
+  grid.innerHTML = events.length === 0 ? `<div class="empty-state"><div class="empty-state__icon">${Icons.render('calendar', 'icon icon--xl')}</div><p>No events yet. Create one!</p></div>` :
+    events.map(ev => {
+      const d = new Date(ev.date);
+      const spotsLeft = ev.slots - ev.filled;
+      return `<div style="background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm)">
+        <div style="background:var(--red);padding:16px 20px;color:white;display:flex;justify-content:space-between;align-items:center">
+          <div><div style="font-family:var(--font-display);font-size:1rem;font-weight:700">${ev.title}</div><div style="font-size:0.78rem;opacity:0.75;margin-top:2px">${fmt.date(ev.date)}</div></div>
+          <button class="btn btn-sm" style="background:rgba(255,255,255,0.15);color:white;border-color:rgba(255,255,255,0.3)" onclick="deleteEvent('${ev.id}')">Remove</button>
+        </div>
+        <div style="padding:16px">
+          <div style="display:flex;gap:16px;font-size:0.82rem;color:var(--gray-700);margin-bottom:12px">
+            <span class="icon-text">${Icons.render('map-pin', 'icon icon--inline')}${ev.location}</span>
+            <span class="icon-text">${Icons.render('users', 'icon icon--inline')}${spotsLeft}/${ev.slots} spots</span>
+          </div>
+          <p style="font-size:0.82rem;color:var(--gray-700)">${ev.description||''}</p>
+          <div class="progress-bar" style="margin-top:12px"><div class="progress-fill" style="width:${Math.round((ev.filled/ev.slots)*100)}%"></div></div>
+          <div style="font-size:0.75rem;color:var(--gray-400);margin-top:4px">${ev.filled} signed up</div>
+        </div>
+      </div>`;
+    }).join('');
+}
+
+function renderProjects() {
+  const projects = DB.get('projects');
+  const grid = document.getElementById('projectsAdminGrid');
+  if (!grid) return;
+  grid.innerHTML = projects.map(p => {
+    const pct = Math.min(Math.round((p.collected/p.goal)*100),100);
+    return `<div style="background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow-sm)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <h4 style="font-size:1rem">${p.name}</h4>
+        <span class="badge badge-${p.status==='active'?'green':'gray'}">${p.status}</span>
+      </div>
+      <p style="font-size:0.82rem;color:var(--gray-700);margin-bottom:14px">${p.description}</p>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--gray-400);margin-top:6px">
+        <span>${p.collected}/${p.goal} ${p.unit}</span><span>${pct}%</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <input type="number" placeholder="Update collected" style="flex:1;padding:7px 10px;border:1px solid var(--gray-200);border-radius:var(--radius);font-size:0.82rem;font-family:var(--font-body)" id="upd_${p.id}">
+        <button class="btn btn-primary btn-sm" onclick="updateProjectProgress('${p.id}')">Update</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteProject('${p.id}')">${Icons.render('x', 'icon icon--sm')}</button>
+      </div>
+    </div>`;
+  }).join('') || `<div class="empty-state"><div class="empty-state__icon">${Icons.render('target', 'icon icon--xl')}</div><p>No projects yet.</p></div>`;
+}
+
+function renderReports() {
+  const qs = document.getElementById('quickStats');
+  if (!qs) return;
+  const vols = DB.get('volunteers');
+  const hours = DB.get('volunteer_hours').filter(h=>h.status==='approved');
+  const dons = DB.get('donations');
+  const moneyTotal = dons.filter(d=>d.type==='money').reduce((s,d)=>s+(parseFloat(d.amount)||0),0);
+  const totalHours = hours.reduce((s,h)=>s+parseFloat(h.hours||0),0);
+  qs.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:14px">
+      ${[
+        ['Total Registered Volunteers', vols.length],
+        ['Approved Volunteers', vols.filter(v=>v.status==='approved').length],
+        ['Pending Approvals', vols.filter(v=>v.status==='pending').length],
+        ['Total Approved Volunteer Hours', totalHours + 'h'],
+        ['Total Money Donations', 'R'+moneyTotal.toLocaleString()],
+        ['Total Item Donations', dons.filter(d=>d.type!=='money').length],
+        ['Total Unique Donors', new Set(dons.map(d=>d.donor_name)).size],
+        ['Active Projects', DB.get('projects').filter(p=>p.status==='active').length],
+        ['Upcoming Events', DB.get('events').length],
+      ].map(([label, val]) => `
+        <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--gray-200);font-size:0.9rem">
+          <span style="color:var(--gray-700)">${label}</span>
+          <strong style="color:var(--black)">${val}</strong>
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderGalleryUploads() {
+  const grid = document.getElementById('galleryAdminGrid');
+  if (!grid) return;
+  const uploads = DB.get('gallery_uploads');
+  grid.innerHTML = uploads.length ? uploads.slice().reverse().map(image => `
+    <div style="background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);overflow:hidden">
+      <img src="${image.url}" alt="${image.caption}" style="width:100%;height:140px;object-fit:cover">
+      <div style="padding:10px;font-size:0.8rem">
+        <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${image.caption}</div>
+        <button class="btn btn-danger btn-sm" style="margin-top:8px" onclick="deleteGalleryUpload('${image.id}')">Remove</button>
+      </div>
+    </div>`).join('') : '<p style="color:var(--gray-400);font-size:0.875rem">No uploaded photos yet.</p>';
+}
+
+function deleteGalleryUpload(id) {
+  if (!confirm('Remove this uploaded photo?')) return;
+  DB.delete('gallery_uploads', id);
+  renderGalleryUploads();
+  Toast.info('Photo removed.');
+}
+
+function uploadGalleryFiles(files) {
+  const status = document.getElementById('galleryUploadStatus');
+  const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  const fileList = Array.from(files || []);
+  if (!fileList.length) return;
+  let completed = 0;
+  let added = 0;
+  fileList.forEach(file => {
+    if (!validTypes.includes(file.type)) { Toast.error(`${file.name}: unsupported image type.`); completed++; return; }
+    if (file.size > 5 * 1024 * 1024) { Toast.error(`${file.name}: image must be 5MB or smaller.`); completed++; return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        DB.insert('gallery_uploads', { url: reader.result, caption: file.name.replace(/\.[^.]+$/, ''), event: 'Uploaded Photos', date: new Date().toISOString(), category: 'uploads' });
+        added++;
+      } catch (error) {
+        Toast.error('Upload could not be saved. This device may be out of local storage.');
+      }
+      completed++;
+      if (completed === fileList.length) {
+        status.textContent = `${added} photo${added === 1 ? '' : 's'} uploaded successfully.`;
+        renderGalleryUploads();
+      }
+    };
+    reader.onerror = () => { completed++; Toast.error(`${file.name}: could not be read.`); };
+    reader.readAsDataURL(file);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('galleryFileInput');
+  const dropZone = document.getElementById('galleryDropZone');
+  input?.addEventListener('change', event => uploadGalleryFiles(event.target.files));
+  dropZone?.addEventListener('dragover', event => { event.preventDefault(); dropZone.style.borderColor = 'var(--red)'; });
+  dropZone?.addEventListener('dragleave', () => { dropZone.style.borderColor = 'var(--gray-200)'; });
+  dropZone?.addEventListener('drop', event => { event.preventDefault(); dropZone.style.borderColor = 'var(--gray-200)'; uploadGalleryFiles(event.dataTransfer.files); });
+  renderGalleryUploads();
+});
+
+// Actions
+function approveVolunteer(id) {
+  const vols = DB.get('volunteers');
+  const idx = vols.findIndex(v => v.id === id);
+  if (idx === -1) { Toast.error('Volunteer not found.'); return; }
+  vols[idx].status = 'approved';
+  DB.set('volunteers', vols);
+  const users = DB.get('users');
+  const user = users.find(u => u.id === vols[idx].user_id);
+  if (user) { user.status = 'approved'; DB.set('users', users); }
+  Toast.success('Volunteer approved! A confirmation email has been sent.');
+  renderVolunteers(); loadOverview(); updateBadges();
+}
+function deleteVolunteer(id) {
+  if (!confirm('Remove this volunteer?')) return;
+  const volunteer = DB.get('volunteers').find(v => v.id === id);
+  DB.delete('volunteers', id);
+  if (volunteer?.user_id) DB.delete('users', volunteer.user_id);
+  Toast.info('Volunteer removed.'); renderVolunteers(); loadOverview(); updateBadges();
+}
+function approveHours(id) {
+  DB.update('volunteer_hours', id, { status: 'approved' });
+  Toast.success('Hours approved! Volunteer has been notified.'); renderAllHours(); loadOverview(); updateBadges();
+}
+function rejectHours(id) {
+  DB.update('volunteer_hours', id, { status: 'rejected' });
+  Toast.info('Hours rejected.'); renderAllHours(); updateBadges();
+}
+function createAdminEvent() {
+  const name = document.getElementById('evName').value.trim();
+  const date = document.getElementById('evDate').value;
+  const location = document.getElementById('evLocation').value.trim();
+  const slotsInput = document.getElementById('evSlots').value.trim();
+  const slots = slotsInput === '' ? 30 : parseInt(slotsInput, 10);
+  if (!name || !date || !location || !Number.isInteger(slots) || slots < 1) { Toast.error('Enter a name, date, location, and a positive slot count.'); return; }
+  DB.insert('events', { title: name, date, location, slots, filled: 0, description: document.getElementById('evDesc').value });
+  Toast.success('Event created successfully!');
+  Modal.close('addEventModal');
+  renderEvents(); loadOverview();
+  ['evName','evDate','evLocation','evSlots','evDesc'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+}
+function deleteEvent(id) {
+  if (!confirm('Delete this event?')) return;
+  DB.delete('events', id); Toast.info('Event deleted.'); renderEvents(); loadOverview();
+}
+function createProject() {
+  const name = document.getElementById('prjName').value.trim();
+  const goal = parseInt(document.getElementById('prjGoal').value, 10);
+  if (!name || !Number.isInteger(goal) || goal < 1) { Toast.error('Enter a project name and a positive goal.'); return; }
+  DB.insert('projects', { name, goal, collected: 0, unit: document.getElementById('prjUnit').value, location: document.getElementById('prjLocation').value, description: document.getElementById('prjDesc').value, status: 'active' });
+  Toast.success('Project created!'); Modal.close('addProjectModal'); renderProjects(); loadOverview();
+}
+function updateProjectProgress(id) {
+  const val = parseInt(document.getElementById('upd_'+id)?.value);
+  if (!val || val < 0) { Toast.error('Enter a valid number.'); return; }
+  DB.update('projects', id, { collected: val });
+  Toast.success('Project progress updated!'); renderProjects(); loadOverview();
+}
+function deleteProject(id) {
+  if (!confirm('Delete this project?')) return;
+  DB.delete('projects', id); Toast.info('Project deleted.'); renderProjects(); loadOverview();
+}
+function showAddDonationModal() { Modal.open('addDonationModal'); }
+function logDonation() {
+  const name = document.getElementById('dnName').value.trim();
+  const type = document.getElementById('dnType').value;
+  const amount = Number(document.getElementById('dnAmount').value);
+  if (!name) { Toast.error('Please enter donor name.'); return; }
+  if (type === 'money' && (!Number.isFinite(amount) || amount < 1)) { Toast.error('Enter a valid positive donation amount.'); return; }
+  DB.insert('donations', { donor_name: name, type, amount: type === 'money' ? amount : null, item_description: type !== 'money' ? document.getElementById('dnAmount').value.trim() : null, city: document.getElementById('dnCity').value.trim(), date: document.getElementById('dnDate').value || new Date().toISOString(), anonymous: false });
+  Toast.success('Donation logged!'); Modal.close('addDonationModal'); renderDonations(); loadOverview();
+}
+function generateReport(type, format) {
+  Toast.info(`Generating ${type} report as ${format.toUpperCase()}... (Connect Supabase + jsPDF for production exports)`);
+}
+function handleSearch(val) {
+  if (!val) return;
+  Toast.info(`Searching for "${val}"...`);
+}
+function logOut() { localStorage.removeItem('bltf_session'); window.location.href = '../login.html'; }
+
+function showPage(page) {
+  const pages = ['overview','volunteers','hours','donations','events','projects','gallery','reports'];
+  pages.forEach(p => { const el = document.getElementById('page-'+p); if(el) el.style.display = p===page?'block':'none'; });
+  document.querySelectorAll('.sidebar__link').forEach(l => l.classList.remove('active'));
+  const idx = ['overview','volunteers','hours','donations','events','projects','gallery','reports'].indexOf(page);
+  const links = document.querySelectorAll('.sidebar__link');
+  if (links[idx]) links[idx].classList.add('active');
+  const titles = { overview:'Dashboard', volunteers:'Volunteer Management', hours:'Hour Approvals', donations:'Donation Management', events:'Event Management', projects:'Project Management', gallery:'Gallery Management', reports:'Reports' };
+  document.getElementById('pageTitle').textContent = titles[page] || page;
+  if (page==='volunteers') renderVolunteers();
+  if (page==='hours') renderAllHours();
+  if (page==='donations') renderDonations();
+  if (page==='events') renderEvents();
+  if (page==='projects') renderProjects();
+  if (page==='gallery') renderGalleryUploads();
+  if (page==='reports') renderReports();
+}
+</script>
+</body>
+</html>
