@@ -101,7 +101,9 @@
           <label class="form-label">Message *</label>
           <textarea class="form-control" id="cfMessage" rows="5" placeholder="Tell us how we can help..."></textarea>
         </div>
-        <button class="btn btn-primary btn-lg" style="width:100%;justify-content:center" onclick="submitContact()">
+        <!-- Spam trap: hidden from real visitors, bots tend to fill it in -->
+        <input type="text" id="cfHoney" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;">
+        <button id="cfBtn" class="btn btn-primary btn-lg" style="width:100%;justify-content:center" onclick="submitContact()">
           Send Message →
         </button>
       </div>
@@ -199,17 +201,56 @@
 <script src="public/js/icons.js"></script>
 <script src="public/js/config.js"></script>
 <script>
-function submitContact() {
-  const first = document.getElementById('cfFirst').value.trim();
-  const last  = document.getElementById('cfLast').value.trim();
-  const email = document.getElementById('cfEmail').value.trim();
-  const msg   = document.getElementById('cfMessage').value.trim();
+// Where contact form messages are delivered (via FormSubmit).
+// Testing with Tebogo's email first; swap to biglittlethingsfoundation@gmail.com once confirmed working.
+const FORM_EMAIL = 'tebogodanny19@gmail.com';
+
+async function submitContact() {
+  const first   = document.getElementById('cfFirst').value.trim();
+  const last    = document.getElementById('cfLast').value.trim();
+  const email   = document.getElementById('cfEmail').value.trim();
+  const subject = document.getElementById('cfSubject').value;
+  const msg     = document.getElementById('cfMessage').value.trim();
+  const honey   = document.getElementById('cfHoney').value;
   if (!first || !last) { Toast.error('Please enter your name.'); return; }
   if (!email || !email.includes('@')) { Toast.error('Please enter a valid email.'); return; }
   if (!msg) { Toast.error('Please enter a message.'); return; }
-  Toast.success(`Thank you, ${first}! Your message has been sent. We'll get back to you within 24 hours.`);
-  ['cfFirst','cfLast','cfEmail','cfMessage'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('cfSubject').value = '';
+
+  const btn = document.getElementById('cfBtn');
+  const originalLabel = btn.innerHTML;
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+
+  try {
+    const res = await fetch('https://formsubmit.co/ajax/' + FORM_EMAIL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        _subject: 'New website message from ' + first + ' ' + last + ' (' + (subject || 'No subject') + ')',
+        _template: 'table',
+        _captcha: 'false',
+        _replyto: email,
+        _honey: honey,
+        'First Name': first,
+        'Last Name': last,
+        'Email': email,
+        'Subject': subject || 'Not specified',
+        'Message': msg
+      })
+    });
+    if (!res.ok) throw new Error('Request failed with status ' + res.status);
+    await res.json();
+
+    Toast.success(`Thank you, ${first}! Your message has been sent. We'll get back to you within 24 hours.`);
+    ['cfFirst','cfLast','cfEmail','cfMessage'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('cfSubject').value = '';
+  } catch (err) {
+    console.error('Contact form error:', err);
+    Toast.error('Sorry, your message could not be sent. Please try again or email us directly.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalLabel;
+  }
 }
 function toggleFaq(el) {
   el.classList.toggle('open');
