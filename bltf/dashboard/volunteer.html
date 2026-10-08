@@ -187,12 +187,31 @@
     </div>
 
     <!-- ── EVENTS PAGE ── -->
-    <div id="page-events" style="display:none">
-      <div class="panel">
-        <div class="panel__header"><span class="panel__title">Upcoming Events</span></div>
-        <div id="eventsList" style="padding:24px;display:grid;gap:16px"></div>
+<div id="page-events" style="display:none">
+
+  <!-- Upcoming Events -->
+  <div class="panel">
+    <div class="panel__header">
+      <span class="panel__title">Upcoming Events</span>
+    </div>
+
+    <div id="eventsList" style="padding:24px;display:grid;gap:16px"></div>
+  </div>
+
+  <!-- My Registered Events -->
+  <div class="panel" style="margin-top:24px">
+    <div class="panel__header">
+      <span class="panel__title">My Registered Events</span>
+    </div>
+
+    <div id="myRegisteredEvents" style="padding:24px;display:grid;gap:16px">
+      <div class="empty-state">
+        <p>Loading your registered events...</p>
       </div>
     </div>
+  </div>
+
+</div>
 
     <!-- ── PROFILE PAGE ── -->
     <div id="page-profile" style="display:none">
@@ -235,7 +254,6 @@
   </main>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="../public/js/icons.js"></script>
 <script src="../public/js/config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -248,153 +266,799 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!session) { window.location.href = '../login.html'; return; }
   if (session.role === 'admin') { window.location.href = 'admin.html'; return; }
   currentUser = session;
-  loadUserData();
-  loadOverview();
-  loadEvents();
+  await loadUserData();
+  await loadOverview();
+  await loadEvents();
+  await loadRegisteredEvents();
 });
 
-function loadUserData() {
-  const users = DB.get('users');
-  userVolData = users.find(u => u.id === currentUser.id) || currentUser;
-  const initials = (userVolData.name || 'VL').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-  document.getElementById('sidebarName').textContent = userVolData.name || currentUser.name;
-  document.getElementById('welcomeName').textContent = (userVolData.name || currentUser.name).split(' ')[0] + '!';
-  document.getElementById('headerAvatar').textContent = initials;
-  document.getElementById('profileAvatar').textContent = initials;
-  document.getElementById('profileName').textContent = userVolData.name || currentUser.name;
-  document.getElementById('editName').value = userVolData.name || '';
-  document.getElementById('editEmail').value = userVolData.email || '';
-  document.getElementById('editPhone').value = userVolData.phone || '';
-  document.getElementById('editSkills').value = userVolData.skills || '';
-  if (userVolData.city) document.getElementById('editCity').value = userVolData.city;
-}
-
-function loadOverview() {
-  const myHours = DB.get('volunteer_hours').filter(h => h.user_id === currentUser.id);
-  const approved = myHours.filter(h => h.status === 'approved');
-  const totalHours = approved.reduce((s,h) => s + parseFloat(h.hours||0), 0);
-  const thisMonth = approved.filter(h => new Date(h.date).getMonth() === new Date().getMonth()).reduce((s,h) => s+parseFloat(h.hours||0),0);
-
-  const certs = getCertificates(totalHours);
-
-  document.getElementById('statHours').textContent = totalHours;
-  document.getElementById('statHoursChange').textContent = `+${thisMonth} this month`;
-  document.getElementById('statEvents').textContent = new Set(approved.map(h=>h.event_name)).size;
-  document.getElementById('statCerts').textContent = certs.earned;
-  document.getElementById('statRank').textContent = getRank(totalHours);
-  document.getElementById('profileHours').textContent = totalHours;
-
-  // Recent hours table
-  const recentBody = document.getElementById('recentHoursTable');
-  if (myHours.length === 0) {
-    recentBody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-state__icon">${Icons.render('clipboard-list', 'icon icon--xl')}</div><p>No hours logged yet.</p></div></td></tr>`;
-  } else {
-    recentBody.innerHTML = myHours.slice(-5).reverse().map(h => `
-      <tr>
-        <td><strong>${h.event_name}</strong><br><small style="color:var(--gray-400)">${h.location||''}</small></td>
-        <td>${fmt.dateShort(h.date)}</td>
-        <td><strong>${h.hours}h</strong></td>
-        <td><span class="badge badge-${h.status==='approved'?'green':h.status==='rejected'?'red':'orange'}">${h.status}</span></td>
-      </tr>`).join('');
+async function loadUserData() {
+  if (!currentUser) {
+    console.error('Current user is missing.');
+    return;
   }
 
-  // Cert progress
-  const milestones = [10,25,50,100];
-  const nextMilestone = milestones.find(m => m > totalHours) || 100;
-  const prevMilestone = milestones.filter(m => m <= totalHours).pop() || 0;
-  const pct = Math.min(Math.round(((totalHours - prevMilestone)/(nextMilestone - prevMilestone))*100),100);
-  document.getElementById('certProgress').innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div><span style="font-size:1.4rem;font-weight:900;color:var(--red)">${totalHours}</span> <span style="color:var(--gray-700);font-size:0.875rem">hours logged</span></div>
-      <div style="font-size:0.875rem;color:var(--gray-700)">Next milestone: <strong>${nextMilestone}h</strong></div>
-    </div>
-    <div class="progress-bar" style="height:12px"><div class="progress-fill" style="width:${pct}%"></div></div>
-    <div style="font-size:0.8rem;color:var(--gray-400);margin-top:8px">${nextMilestone-totalHours} hours until your next certificate</div>`;
+  try {
+    const token = localStorage.getItem('bltf_token');
+
+    if (!token) {
+      console.error('Authentication token is missing.');
+      window.location.href = '../login.html';
+      return;
+    }
+
+    const response = await fetch(
+      'http://localhost:3000/api/auth/me',
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      console.error('Error loading user profile:', result);
+      Toast.error('Could not load your profile.');
+      return;
+    }
+
+    const userData = result.user;
+    const volunteerData = result.user.volunteer || {};
+
+    // Combine the two records
+    userVolData = {
+      ...userData,
+      ...volunteerData
+    };
+
+    const initials = (userVolData.name || 'VL')
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+
+    // Sidebar
+    document.getElementById('sidebarName').textContent =
+      userVolData.name || currentUser.name;
+
+    // Welcome message
+    document.getElementById('welcomeName').textContent =
+      (userVolData.name || currentUser.name).split(' ')[0] + '!';
+
+    // Avatars
+    document.getElementById('headerAvatar').textContent = initials;
+    document.getElementById('profileAvatar').textContent = initials;
+
+    // Profile information
+    document.getElementById('profileName').textContent =
+      userVolData.name || currentUser.name;
+
+    document.getElementById('editName').value =
+      userVolData.name || '';
+
+    document.getElementById('editEmail').value =
+      userVolData.email || '';
+
+    document.getElementById('editPhone').value =
+      userVolData.phone || '';
+
+    document.getElementById('editSkills').value =
+      userVolData.skills || '';
+
+    if (userVolData.city) {
+      document.getElementById('editCity').value =
+        userVolData.city;
+    }
+
+  } catch (error) {
+    console.error('Unexpected profile loading error:', error);
+    Toast.error('Something went wrong while loading your profile.');
+  }
 }
 
-function loadEvents() {
-  const events = DB.get('events');
-  const list = document.getElementById('overviewEvents');
-  if (list) {
-    list.innerHTML = events.slice(0,3).map(ev => {
-      const d = new Date(ev.date);
-      return `<div style="display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:var(--radius);border:1px solid var(--gray-200)">
-        <div style="background:var(--red);color:white;border-radius:var(--radius);padding:8px 10px;text-align:center;flex-shrink:0;min-width:44px">
-          <div style="font-family:var(--font-display);font-size:1.2rem;font-weight:900;line-height:1">${d.getDate()}</div>
-          <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;opacity:0.85">${d.toLocaleString('en',{month:'short'})}</div>
-        </div>
-        <div>
-          <div style="font-weight:700;font-size:0.875rem">${ev.title}</div>
-          <div class="icon-text" style="font-size:0.78rem;color:var(--gray-400);margin-top:3px">${Icons.render('map-pin', 'icon icon--inline')}${ev.location}</div>
-        </div>
-      </div>`;
-    }).join('');
+async function loadOverview() {
+  if (!currentUser) {
+    console.error('Current user is missing.');
+    return;
   }
 
-  const fullList = document.getElementById('eventsList');
-  if (fullList) {
-    fullList.innerHTML = events.map(ev => {
-      const d = new Date(ev.date);
-      const spotsLeft = ev.slots - ev.filled;
-      return `<div style="display:flex;gap:20px;align-items:flex-start;padding:20px;border-radius:var(--radius-lg);border:1px solid var(--gray-200);background:var(--white);transition:var(--transition)">
-        <div style="background:var(--red);color:white;border-radius:var(--radius);padding:12px 16px;text-align:center;flex-shrink:0">
-          <div style="font-family:var(--font-display);font-size:1.6rem;font-weight:900;line-height:1">${d.getDate()}</div>
-          <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;opacity:0.85">${d.toLocaleString('en',{month:'short'})}</div>
-        </div>
-        <div style="flex:1">
-          <h3 style="font-size:1.05rem;margin-bottom:8px">${ev.title}</h3>
-          <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:0.82rem;color:var(--gray-700);margin-bottom:10px">
-            <span class="icon-text">${Icons.render('map-pin', 'icon icon--inline')}${ev.location}</span>
-            <span class="icon-text">${Icons.render('users', 'icon icon--inline')}${spotsLeft} spots left</span>
+  try {
+    const token = localStorage.getItem('bltf_token');
+
+    if (!token) {
+      console.error('Authentication token is missing.');
+      window.location.href = '../login.html';
+      return;
+    }
+
+    const response = await fetch(
+      'http://localhost:3000/api/volunteer/dashboard',
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      console.error('Error loading volunteer hours:', result);
+      Toast.error('Could not load your volunteer hours.');
+      return;
+    }
+
+    const myHours = result.hours || [];
+
+    const approved = myHours.filter(
+      h => h.status === 'approved'
+    );
+
+    const totalHours = approved.reduce(
+      (sum, h) => sum + parseFloat(h.hours || 0),
+      0
+    );
+
+    const now = new Date();
+
+    const thisMonth = approved
+      .filter(h => {
+        const date = new Date(h.date);
+
+        return (
+          date.getMonth() === now.getMonth() &&
+          date.getFullYear() === now.getFullYear()
+        );
+      })
+      .reduce(
+        (sum, h) => sum + parseFloat(h.hours || 0),
+        0
+      );
+
+    const certs = getCertificates(totalHours);
+
+    // Dashboard statistics
+    document.getElementById('statHours').textContent = totalHours;
+
+    document.getElementById('statHoursChange').textContent =
+      `+${thisMonth} this month`;
+
+    document.getElementById('statEvents').textContent =
+      new Set(approved.map(h => h.event_name)).size;
+
+    document.getElementById('statCerts').textContent =
+      certs.earned;
+
+    document.getElementById('statRank').textContent =
+      getRank(totalHours);
+
+    document.getElementById('profileHours').textContent =
+      totalHours;
+
+    // Recent hours
+    const recentHoursTable =
+      document.getElementById('recentHoursTable');
+
+    if (recentHoursTable) {
+      if (myHours.length === 0) {
+        recentHoursTable.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align:center;">
+              No volunteer hours logged yet.
+            </td>
+          </tr>
+        `;
+      } else {
+        recentHoursTable.innerHTML = myHours
+          .slice(0, 5)
+          .map(h => `
+            <tr>
+              <td>${h.event_name || '-'}</td>
+              <td>${h.date || '-'}</td>
+              <td>${h.hours || 0}</td>
+              <td>${h.location || '-'}</td>
+              <td>${h.status || '-'}</td>
+            </tr>
+          `)
+          .join('');
+      }
+    }
+
+  } catch (error) {
+    console.error('Unexpected overview error:', error);
+    Toast.error('Something went wrong while loading your dashboard.');
+  }
+}
+
+async function loadEvents() {
+  if (!currentUser) {
+    console.error('Current user is missing.');
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('bltf_token');
+
+    if (!token) {
+      console.error('Authentication token is missing.');
+      window.location.href = '../login.html';
+      return;
+    }
+
+    const response = await fetch(
+      'http://localhost:3000/api/volunteer/events',
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      console.error('Error loading events:', result);
+      Toast.error('Could not load events.');
+      return;
+    }
+
+    const eventList = result.events || [];
+
+    // Overview events
+    const list = document.getElementById('overviewEvents');
+
+    if (list) {
+      if (eventList.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <h3>No upcoming events</h3>
+            <p>Check back soon for new volunteering opportunities.</p>
           </div>
-          <p style="font-size:0.875rem;color:var(--gray-700)">${ev.description}</p>
+        `;
+      } else {
+        list.innerHTML = eventList.slice(0, 3).map(ev => {
+          const d = new Date(ev.date);
+
+          return `
+            <div style="display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:var(--radius);border:1px solid var(--gray-200)">
+              
+              <div style="background:var(--red);color:white;border-radius:var(--radius);padding:8px 10px;text-align:center;flex-shrink:0;min-width:44px">
+                <div style="font-family:var(--font-display);font-size:1.2rem;font-weight:900;line-height:1">
+                  ${d.getDate()}
+                </div>
+                <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;opacity:0.85">
+                  ${d.toLocaleString('en', { month: 'short' })}
+                </div>
+              </div>
+
+              <div>
+                <div style="font-weight:700;font-size:0.875rem">
+                  ${ev.name}
+                </div>
+
+                <div class="icon-text" style="font-size:0.78rem;color:var(--gray-400);margin-top:3px">
+                  ${Icons.render('map-pin', 'icon icon--inline')}
+                  ${ev.location || 'Location to be announced'}
+                </div>
+              </div>
+
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    // Full events list
+    const fullList = document.getElementById('eventsList');
+
+    if (fullList) {
+      if (eventList.length === 0) {
+        fullList.innerHTML = `
+          <div class="empty-state">
+            <h3>No upcoming events</h3>
+            <p>Check back soon for new volunteering opportunities.</p>
+          </div>
+        `;
+      } else {
+        fullList.innerHTML = eventList.map(ev => {
+          const d = new Date(ev.date);
+
+          return `
+            <div style="display:flex;gap:20px;align-items:flex-start;padding:20px;border-radius:var(--radius-lg);border:1px solid var(--gray-200);background:var(--white);transition:var(--transition)">
+              
+              <div style="background:var(--red);color:white;border-radius:var(--radius);padding:12px 16px;text-align:center;flex-shrink:0">
+                <div style="font-family:var(--font-display);font-size:1.6rem;font-weight:900;line-height:1">
+                  ${d.getDate()}
+                </div>
+
+                <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;opacity:0.85">
+                  ${d.toLocaleString('en', { month: 'short' })}
+                </div>
+              </div>
+
+              <div style="flex:1">
+                <h3 style="font-size:1.05rem;margin-bottom:8px">
+                  ${ev.name}
+                </h3>
+
+                <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:0.82rem;color:var(--gray-700);margin-bottom:10px">
+                  <span class="icon-text">
+                    ${Icons.render('map-pin', 'icon icon--inline')}
+                    ${ev.location || 'Location to be announced'}
+                  </span>
+                </div>
+
+                <p style="font-size:0.875rem;color:var(--gray-700)">
+                  ${ev.description || 'No description available.'}
+                </p>
+              </div>
+
+              <button
+                class="btn btn-primary btn-sm"
+                onclick="joinEvent('${ev.id}','${ev.name.replace(/'/g, "\\'")}')">
+                Join Event
+              </button>
+
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+  } catch (error) {
+    console.error('Unexpected events error:', error);
+    Toast.error('Something went wrong while loading events.');
+  }
+}
+
+async function loadRegisteredEvents() {
+  if (!currentUser) {
+    console.error('Current user is missing.');
+    return;
+  }
+
+  const container = document.getElementById('myRegisteredEvents');
+
+  if (!container) {
+    console.error('Could not find myRegisteredEvents.');
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('bltf_token');
+
+    if (!token) {
+      console.error('Authentication token is missing.');
+      window.location.href = '../login.html';
+      return;
+    }
+
+    const response = await fetch(
+      'http://localhost:3000/api/volunteer/events/my-registrations',
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      console.error('Error loading registered events:', result);
+
+      container.innerHTML = `
+        <div class="empty-state">
+          <h3>Could not load your events</h3>
+          <p>Please refresh the page and try again.</p>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="joinEvent('${ev.id}','${ev.title}')">Join Event</button>
-      </div>`;
+      `;
+      return;
+    }
+
+    const registrations = result.registrations || [];
+
+    console.log('Registered events:', registrations);
+
+    if (registrations.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state__icon">
+            ${Icons.render('calendar', 'icon icon--xl')}
+          </div>
+          <h3>No registered events</h3>
+          <p>You haven't joined any upcoming events yet.</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = registrations.map(reg => {
+      const event = reg.event;
+
+      if (!event) return '';
+
+      const d = new Date(event.date);
+
+      return `
+        <div style="
+          display:flex;
+          gap:20px;
+          align-items:flex-start;
+          padding:20px;
+          border-radius:var(--radius-lg);
+          border:1px solid var(--gray-200);
+          background:var(--white);
+        ">
+
+          <div style="
+            background:var(--red);
+            color:white;
+            border-radius:var(--radius);
+            padding:12px 16px;
+            text-align:center;
+            flex-shrink:0;
+          ">
+            <div style="
+              font-family:var(--font-display);
+              font-size:1.6rem;
+              font-weight:900;
+              line-height:1;
+            ">
+              ${d.getDate()}
+            </div>
+
+            <div style="
+              font-size:0.72rem;
+              text-transform:uppercase;
+              letter-spacing:0.1em;
+              opacity:0.85;
+            ">
+              ${d.toLocaleString('en', { month: 'short' })}
+            </div>
+          </div>
+
+          <div style="flex:1">
+
+            <h3 style="font-size:1.05rem;margin-bottom:8px">
+              ${event.name}
+            </h3>
+
+            <div style="
+              display:flex;
+              gap:16px;
+              flex-wrap:wrap;
+              font-size:0.82rem;
+              color:var(--gray-700);
+              margin-bottom:10px;
+            ">
+
+              <span class="icon-text">
+                ${Icons.render('map-pin', 'icon icon--inline')}
+                ${event.location || 'Location to be announced'}
+              </span>
+
+              <span class="icon-text">
+                ${Icons.render('calendar', 'icon icon--inline')}
+                ${event.date}
+              </span>
+
+            </div>
+
+            <p style="
+              font-size:0.875rem;
+              color:var(--gray-700);
+              margin-bottom:10px;
+            ">
+              ${event.description || 'No description available.'}
+            </p>
+
+            <span class="status-badge status-${reg.status}">
+              ${reg.status}
+            </span>
+
+            ${reg.status === 'registered' ? `
+              <button
+                type="button"
+                class="btn btn-sm"
+                style="margin-top:12px; padding:8px 14px; min-width:150px;"
+                onclick="cancelEventRegistration('${event.id}', '${event.name.replace(/'/g, "\\'")}')">
+                Cancel Registration
+              </button>
+            ` : ''}
+
+          </div>
+
+        </div>
+      `;
     }).join('');
-  }
-}
 
-function loadAllHours() {
-  const myHours = DB.get('volunteer_hours').filter(h => h.user_id === currentUser.id);
-  const body = document.getElementById('allHoursTable');
-  if (!body) return;
-  if (myHours.length === 0) {
-    body.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-state__icon">${Icons.render('clock', 'icon icon--xl')}</div><p>No hours logged yet.</p></div></td></tr>`;
-    return;
-  }
-  body.innerHTML = myHours.reverse().map(h => `
-    <tr>
-      <td><strong>${h.event_name}</strong></td>
-      <td>${fmt.dateShort(h.date)}</td>
-      <td><strong>${h.hours}h</strong></td>
-      <td><span class="badge badge-${h.status==='approved'?'green':h.status==='rejected'?'red':'orange'}">${h.status}</span></td>
-    </tr>`).join('');
-}
+  } catch (error) {
+    console.error('Unexpected error loading registered events:', error);
 
-function loadCertificates() {
-  const myHours = DB.get('volunteer_hours').filter(h => h.user_id === currentUser.id && h.status === 'approved');
-  const totalHours = myHours.reduce((s,h) => s+parseFloat(h.hours||0),0);
-  const milestones = [{h:10,label:'Bronze',color:'#D0021B'},{h:25,label:'Silver',color:'#FFFFFF'},{h:50,label:'Gold',color:'#D0021B'},{h:100,label:'Platinum',color:'#FFFFFF'}];
-  const earned = milestones.filter(m => totalHours >= m.h);
-  const list = document.getElementById('certsList');
-  if (earned.length === 0) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-state__icon">${Icons.render('graduation-cap', 'icon icon--xl')}</div><h3>No certificates yet</h3><p>Log 10 approved hours to earn your first certificate!</p><button class="btn btn-primary" style="margin-top:16px" onclick="showPage('hours')">Log Hours</button></div>`;
-    return;
-  }
-  list.innerHTML = earned.map(m => `
-    <div style="background:linear-gradient(135deg,#0D0D0D,#1A1A1A);border-radius:var(--radius-lg);padding:32px;border:1px solid rgba(255,255,255,0.08);position:relative;overflow:hidden">
-      <img src="../public/images/logo.png" alt="Big Little Things Foundation" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid #D0021B;margin-bottom:18px">
-      <div style="position:absolute;top:-20px;right:-20px;opacity:0.06">${Icons.render('graduation-cap', 'icon icon--xl')}</div>
-      <div style="font-size:0.75rem;color:rgba(255,255,255,0.4);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:12px">Certificate of Volunteering</div>
-      <div style="font-family:var(--font-display);font-size:1.5rem;font-weight:700;color:${m.color}">${m.label} Volunteer</div>
-      <div style="color:rgba(255,255,255,0.6);font-size:0.875rem;margin-top:8px">Awarded to <strong style="color:white">${currentUser.name}</strong> for completing <strong style="color:${m.color}">${m.h}+ volunteer hours</strong></div>
-      <div style="color:rgba(255,255,255,0.35);font-size:0.78rem;margin-top:6px">Big Little Things Foundation · 2025</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:20px">
-        <button class="btn" onclick="downloadCertificate('${m.label}','${m.h}','png')" style="background:var(--red);color:#fff;border-color:var(--red);font-weight:700">${Icons.render('download', 'icon icon--sm')} PNG</button>
-        <button class="btn" onclick="downloadCertificate('${m.label}','${m.h}','pdf')" style="background:#fff;color:#000;border-color:#fff;font-weight:700">${Icons.render('download', 'icon icon--sm')} PDF</button>
+    container.innerHTML = `
+      <div class="empty-state">
+        <h3>Something went wrong</h3>
+        <p>Please refresh the page and try again.</p>
       </div>
-    </div>`).join('');
+    `;
+  }
+}
+
+async function cancelEventRegistration(registrationId, eventName) {
+  if (!currentUser) {
+    Toast.error('Your session is not available. Please log in again.');
+    return;
+  }
+
+  const confirmed = confirm(
+    `Are you sure you want to cancel your registration for "${eventName}"?`
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('bltf_token');
+
+    if (!token) {
+      Toast.error('Your session has expired. Please log in again.');
+      window.location.href = '../login.html';
+      return;
+    }
+
+    Toast.info('Cancelling your registration...');
+
+    const response = await fetch(
+      `http://localhost:3000/api/volunteer/events/${registrationId}/signup`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      console.error('Error cancelling event registration:', result);
+
+      Toast.error(
+        result.message || 'Could not cancel your registration. Please try again.'
+      );
+
+      return;
+    }
+
+    console.log('Event registration cancelled:', result);
+
+    Toast.success(
+      `Your registration for "${eventName}" has been cancelled.`
+    );
+
+    await loadRegisteredEvents();
+
+  } catch (error) {
+    console.error('Unexpected cancellation error:', error);
+
+    Toast.error('Something went wrong. Please try again.');
+  }
+}
+
+async function loadAllHours() {
+  if (!currentUser) {
+    console.error('Current user is missing.');
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('bltf_token');
+
+    if (!token) {
+      console.error('Authentication token is missing.');
+      window.location.href = '../login.html';
+      return;
+    }
+
+    const response = await fetch(
+      'http://localhost:3000/api/volunteer/hours',
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      console.error('Error loading volunteer hours:', result);
+      Toast.error('Could not load your volunteer hours.');
+      return;
+    }
+
+    const hours = result.hours || [];
+
+    const table = document.getElementById('allHoursTable');
+
+    if (!table) {
+      console.error('Could not find allHoursTable.');
+      return;
+    }
+
+    if (hours.length === 0) {
+      table.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center;">
+            No volunteer hours logged yet.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    table.innerHTML = hours.map(h => `
+      <tr>
+        <td>${h.event_name || '-'}</td>
+        <td>${h.date || '-'}</td>
+        <td>${h.hours || 0}</td>
+        <td>${h.location || '-'}</td>
+        <td>
+          <span class="status-badge status-${h.status}">
+            ${h.status || '-'}
+          </span>
+        </td>
+        <td>${h.rejection_reason || '-'}</td>
+      </tr>
+    `).join('');
+
+  } catch (error) {
+    console.error('Unexpected error loading hours:', error);
+    Toast.error('Something went wrong while loading your hours.');
+  }
+}
+
+async function loadCertificates() {
+  if (!currentUser) {
+    console.error('Current user is missing.');
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('bltf_token');
+
+    if (!token) {
+      console.error('Authentication token is missing.');
+      window.location.href = '../login.html';
+      return;
+    }
+
+    const response = await fetch(
+      'http://localhost:3000/api/volunteer/hours',
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      console.error('Error loading certificate hours:', result);
+      Toast.error('Could not load your certificate information.');
+      return;
+    }
+
+    const myHours = result.hours || [];
+
+    const totalHours = myHours
+      .filter(h => h.status === 'approved')
+      .reduce(
+        (sum, h) => sum + parseFloat(h.hours || 0),
+        0
+      );
+
+    const milestones = [
+      {h:10,label:'Bronze',color:'#D0021B'},
+      {h:25,label:'Silver',color:'#FFFFFF'},
+      {h:50,label:'Gold',color:'#D0021B'},
+      {h:100,label:'Platinum',color:'#FFFFFF'}
+    ];
+
+    const earned = milestones.filter(
+      m => totalHours >= m.h
+    );
+
+    const list = document.getElementById('certsList');
+
+    if (!list) {
+      console.error('Could not find certsList.');
+      return;
+    }
+
+    if (earned.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state__icon">
+            ${Icons.render('graduation-cap', 'icon icon--xl')}
+          </div>
+          <h3>No certificates yet</h3>
+          <p>Log 10 approved hours to earn your first certificate!</p>
+          <button
+            class="btn btn-primary"
+            style="margin-top:16px"
+            onclick="showPage('hours')">
+            Log Hours
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    list.innerHTML = earned.map(m => `
+      <div style="background:linear-gradient(135deg,#0D0D0D,#1A1A1A);border-radius:var(--radius-lg);padding:32px;border:1px solid rgba(255,255,255,0.08);position:relative;overflow:hidden">
+        <img
+          src="../public/images/logo.png"
+          alt="Big Little Things Foundation"
+          style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid #D0021B;margin-bottom:18px">
+
+        <div style="position:absolute;top:-20px;right:-20px;opacity:0.06">
+          ${Icons.render('graduation-cap', 'icon icon--xl')}
+        </div>
+
+        <div style="font-size:0.75rem;color:rgba(255,255,255,0.4);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:12px">
+          Certificate of Volunteering
+        </div>
+
+        <div style="font-family:var(--font-display);font-size:1.5rem;font-weight:700;color:${m.color}">
+          ${m.label} Volunteer
+        </div>
+
+        <div style="color:rgba(255,255,255,0.6);font-size:0.875rem;margin-top:8px">
+          Awarded to
+          <strong style="color:white">${currentUser.name}</strong>
+          for completing
+          <strong style="color:${m.color}">${m.h}+ volunteer hours</strong>
+        </div>
+
+        <div style="color:rgba(255,255,255,0.35);font-size:0.78rem;margin-top:6px">
+          Big Little Things Foundation · 2025
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:20px">
+          <button
+            class="btn"
+            onclick="downloadCertificate('${m.label}','${m.h}','png')"
+            style="background:var(--red);color:#fff;border-color:var(--red);font-weight:700">
+            ${Icons.render('download', 'icon icon--sm')} PNG
+          </button>
+
+          <button
+            class="btn"
+            onclick="downloadCertificate('${m.label}','${m.h}','pdf')"
+            style="background:#fff;color:#000;border-color:#fff;font-weight:700">
+            ${Icons.render('download', 'icon icon--sm')} PDF
+          </button>
+        </div>
+      </div>
+    `).join('');
+
+  } catch (error) {
+    console.error('Unexpected certificate error:', error);
+    Toast.error('Something went wrong while loading your certificates.');
+  }
 }
 
 function getCertificates(hours) {
@@ -409,44 +1073,233 @@ function getRank(hours) {
   return 'Newcomer';
 }
 
-function submitHours() {
+async function submitHours() {
   const event = document.getElementById('logEvent').value.trim();
-  const date  = document.getElementById('logDate').value;
-  const hours = Number(document.getElementById('logHours').value);
+  const date = document.getElementById('logDate').value;
+  const hours = parseFloat(document.getElementById('logHours').value);
   const location = document.getElementById('logLocation').value.trim();
   const notes = document.getElementById('logNotes').value.trim();
-  if (!event) { Toast.error('Please enter the event name.'); return; }
-  if (!date) { Toast.error('Please select the date.'); return; }
-  if (!Number.isFinite(hours) || hours < 0.5 || hours > 24) { Toast.error('Please enter between 0.5 and 24 hours.'); return; }
-  if (new Date(`${date}T00:00:00`) > new Date()) { Toast.error('Hours cannot be logged for a future date.'); return; }
-  DB.insert('volunteer_hours', { user_id: currentUser.id, event_name: event, date, hours, location, notes, status: 'pending' });
-  Toast.success('Hours submitted! Pending admin approval.');
-  document.getElementById('logEvent').value = '';
-  document.getElementById('logDate').value = '';
-  document.getElementById('logHours').value = '';
-  document.getElementById('logLocation').value = '';
-  document.getElementById('logNotes').value = '';
-  loadAllHours();
-  loadOverview();
+
+  // Validate the form
+  if (!event) {
+    Toast.error('Please enter the event name.');
+    return;
+  }
+
+  if (!date) {
+    Toast.error('Please select a date.');
+    return;
+  }
+
+  if (isNaN(hours) || hours <= 0 || hours > 24) {
+    Toast.error('Please enter between 0 and 24 hours.');
+    return;
+  }
+
+  if (!currentUser) {
+    Toast.error('Your session is not available. Please log in again.');
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('bltf_token');
+
+    if (!token) {
+      Toast.error('Your session has expired. Please log in again.');
+      window.location.href = '../login.html';
+      return;
+    }
+
+    Toast.info('Submitting your volunteer hours...');
+
+    const response = await fetch(
+      'http://localhost:3000/api/volunteer/hours',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          event: event,
+          date: date,
+          hours: hours,
+          location: location || null,
+          notes: notes || null
+        })
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      console.error('Error saving volunteer hours:', result);
+
+      Toast.error(
+        result.message || 'Could not save your volunteer hours.'
+      );
+
+      return;
+    }
+
+    console.log('Volunteer hours saved:', result);
+
+    Toast.success('Volunteer hours submitted for approval!');
+
+    // Clear the form
+    document.getElementById('logEvent').value = '';
+    document.getElementById('logDate').value = '';
+    document.getElementById('logHours').value = '';
+    document.getElementById('logLocation').value = '';
+    document.getElementById('logNotes').value = '';
+
+    // Refresh the dashboard
+    await loadOverview();
+    await loadAllHours();
+
+  } catch (error) {
+    console.error('Unexpected error submitting hours:', error);
+    Toast.error('Something went wrong. Please try again.');
+  }
 }
 
-function joinEvent(id, title) {
-  Toast.success(`You've signed up for "${title}"! Check your email for confirmation.`);
+
+async function joinEvent(id, title) {
+  if (!currentUser) {
+    Toast.error('Your session is not available. Please log in again.');
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('bltf_token');
+
+    if (!token) {
+      Toast.error('Your session has expired. Please log in again.');
+      window.location.href = '../login.html';
+      return;
+    }
+
+    Toast.info('Joining event...');
+
+    const response = await fetch(
+      `http://localhost:3000/api/volunteer/events/${id}/signup`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      console.error('Error registering for event:', result);
+
+      if (response.status === 409) {
+        Toast.info(`You're already registered for "${title}".`);
+        return;
+      }
+
+      Toast.error(
+        result.message || 'Could not register for this event. Please try again.'
+      );
+      return;
+    }
+
+    console.log('Event registration saved:', result);
+
+    Toast.success(`You've successfully joined "${title}"!`);
+
+  } catch (error) {
+    console.error('Unexpected event registration error:', error);
+    Toast.error('Something went wrong. Please try again.');
+  }
 }
 
-function saveProfile() {
-  const users = DB.get('users');
-  const idx = users.findIndex(u => u.id === currentUser.id);
-  if (idx !== -1) {
-    users[idx].name  = document.getElementById('editName').value;
-    users[idx].phone = document.getElementById('editPhone').value;
-    users[idx].city  = document.getElementById('editCity').value;
-    users[idx].skills= document.getElementById('editSkills').value;
-    DB.set('users', users);
-    currentUser.name = users[idx].name;
-    localStorage.setItem('bltf_session', JSON.stringify(currentUser));
-    loadUserData();
+async function saveProfile() {
+  if (!currentUser) {
+    Toast.error('Your session is not available. Please log in again.');
+    return;
+  }
+
+  const name = document.getElementById('editName').value.trim();
+  const phone = document.getElementById('editPhone').value.trim();
+  const city = document.getElementById('editCity').value;
+  const skills = document.getElementById('editSkills').value.trim();
+
+  if (!name) {
+    Toast.error('Please enter your name.');
+    return;
+  }
+
+  if (!phone) {
+    Toast.error('Please enter your phone number.');
+    return;
+  }
+
+  if (!city) {
+    Toast.error('Please select your city.');
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('bltf_token');
+
+    if (!token) {
+      Toast.error('Your session has expired. Please log in again.');
+      window.location.href = '../login.html';
+      return;
+    }
+
+    Toast.info('Saving your profile...');
+
+    const response = await fetch(
+      'http://localhost:3000/api/auth/me/profile',
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: name,
+          phone: phone,
+          city: city,
+          skills: skills || null
+        })
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      console.error('Error updating user profile:', result);
+
+      Toast.error(
+        result.message || 'Could not update your profile.'
+      );
+
+      return;
+    }
+
+    currentUser.name = name;
+
+    localStorage.setItem(
+      'bltf_session',
+      JSON.stringify(currentUser)
+    );
+
+    await loadUserData();
+
     Toast.success('Profile updated successfully!');
+
+  } catch (error) {
+    console.error('Unexpected profile update error:', error);
+
+    Toast.error(
+      'Something went wrong while saving your profile.'
+    );
   }
 }
 

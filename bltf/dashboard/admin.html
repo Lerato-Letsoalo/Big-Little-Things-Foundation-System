@@ -327,7 +327,6 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="../public/js/icons.js"></script>
 <script src="../public/js/config.js"></script>
 <script>
@@ -351,144 +350,391 @@ function updateBadges() {
   if (hb) hb.style.display = pendingHours > 0 ? 'inline-block' : 'none';
 }
 
-function loadOverview() {
-  const volunteers = DB.get('volunteers');
-  const donations = DB.get('donations');
-  const projects = DB.get('projects');
-  const events = DB.get('events');
-  const allHours = DB.get('volunteer_hours');
+async function loadOverview() {
+  try {
+    const token = localStorage.getItem('bltf_token');
 
-  const moneyDons = donations.filter(d => d.type === 'money').reduce((s,d) => s + (parseFloat(d.amount)||0), 0);
+    const response = await fetch(
+      'http://localhost:3000/api/admin/overview',
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
 
-  document.getElementById('statVols').textContent = volunteers.length;
-  document.getElementById('statDons').textContent = 'R' + moneyDons.toLocaleString();
-  document.getElementById('statProjs').textContent = projects.filter(p => p.status === 'active').length;
-  document.getElementById('statEvts').textContent = events.length;
+    const data = await response.json();
 
-  // Pending hours
-  const pending = allHours.filter(h => h.status === 'pending');
-  const users = DB.get('users');
-  const phTable = document.getElementById('pendingHoursTable');
-  if (phTable) {
-    if (pending.length === 0) {
-      phTable.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--gray-400)">No pending approvals</td></tr>`;
-    } else {
-      phTable.innerHTML = pending.slice(0,5).map(h => {
-        const user = users.find(u => u.id === h.user_id);
-        return `<tr>
-          <td><div style="font-weight:600">${user?.name||'Unknown'}</div></td>
-          <td>${h.event_name}</td>
-          <td><strong>${h.hours}h</strong></td>
-          <td>
-            <div style="display:flex;gap:6px">
-              <button class="btn btn-sm" style="background:#DCFCE7;color:#16A34A;border:none;padding:5px 10px" onclick="approveHours('${h.id}')">${Icons.render('check', 'icon icon--sm')}</button>
-              <button class="btn btn-sm btn-danger" onclick="rejectHours('${h.id}')">${Icons.render('x', 'icon icon--sm')}</button>
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to load overview');
+    }
+
+    const stats = data.stats;
+
+    const statVols = document.getElementById('statVols');
+    const statDons = document.getElementById('statDons');
+    const statProjs = document.getElementById('statProjs');
+    const statEvts = document.getElementById('statEvts');
+
+    if (statVols) {
+      statVols.textContent = Number(stats.volunteers ?? 0).toLocaleString();
+    }
+
+    if (statDons) {
+      const donationsTotal = Number(stats.donations ?? 0);
+      statDons.textContent = 'R' + donationsTotal.toLocaleString();
+    }
+
+    if (statProjs) {
+      statProjs.textContent = Number(stats.projects ?? 0).toLocaleString();
+    }
+
+    if (statEvts) {
+      statEvts.textContent = Number(stats.events ?? 0).toLocaleString();
+    }
+
+    const volunteers = DB.get('volunteers') || [];
+    const donations = DB.get('donations') || [];
+    const projects = DB.get('projects') || [];
+
+    const hoursResponse = await fetch(
+      'http://localhost:3000/api/admin/hours',
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+
+    const hoursData = await hoursResponse.json();
+
+    if (!hoursResponse.ok || !hoursData.success) {
+      throw new Error(hoursData.message || 'Failed to load volunteer hours');
+    }
+
+    const pending = (hoursData.hours || []).filter(h => h.status === 'pending');
+    const phTable = document.getElementById('pendingHoursTable');
+
+    if (phTable) {
+      if (pending.length === 0) {
+        phTable.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--gray-400)">No pending approvals</td></tr>';
+      } else {
+        phTable.innerHTML = pending.slice(0, 5).map(h => {
+          return `<tr>
+            <td><div style="font-weight:600">${h.volunteer_name || 'Unknown'}</div></td>
+            <td>${h.event_name || '—'}</td>
+            <td><strong>${h.hours || 0}h</strong></td>
+            <td>
+              <div style="display:flex;gap:6px">
+                <button class="btn btn-sm" style="background:#DCFCE7;color:#16A34A;border:none;padding:5px 10px" onclick="approveHours('${h.id}')">${Icons.render('check', 'icon icon--sm')}</button>
+                <button class="btn btn-sm btn-danger" onclick="rejectHours('${h.id}')">${Icons.render('x', 'icon icon--sm')}</button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('');
+      }
+    }
+
+    const newVols = document.getElementById('newVolsList');
+    if (newVols) {
+      const recent = volunteers.slice(-4).reverse();
+      newVols.innerHTML = recent.length === 0 ? '<p style="color:var(--gray-400);font-size:0.875rem;padding:12px">No volunteers yet.</p>' : recent.map(v => `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:var(--radius);border:1px solid var(--gray-200)">
+          <div class="avatar">${(v.name || 'V').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}</div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:0.875rem">${v.name || 'Volunteer'}</div>
+            <div style="font-size:0.78rem;color:var(--gray-400)">${v.city || ''}</div>
+          </div>
+          <span class="badge badge-${v.status === 'approved' ? 'green' : 'orange'}">${v.status || 'pending'}</span>
+        </div>`).join('');
+    }
+
+    const rdTable = document.getElementById('recentDonsTable');
+    if (rdTable) {
+      rdTable.innerHTML = donations.slice(-5).reverse().map(d => `
+        <tr>
+          <td><strong>${d.donor_name || 'Unknown'}</strong></td>
+          <td><span class="badge badge-${d.type === 'money' ? 'green' : 'blue'}">${d.type || 'donation'}</span></td>
+          <td>${d.type === 'money' ? 'R' + (Number(d.amount) || 0) : (d.item_description || '—')}</td>
+          <td>${fmt.dateShort(d.date || d.created_at)}</td>
+        </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--gray-400)">No donations yet.</td></tr>';
+    }
+
+    const pp = document.getElementById('projectProgress');
+    if (pp) {
+      pp.innerHTML = projects.filter(p => p.status === 'active').map(p => {
+        const pct = Math.min(Math.round(((Number(p.collected) || 0) / (Number(p.goal) || 1)) * 100), 100);
+        return `<div>
+          <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:600;margin-bottom:6px">
+            <span>${p.name || 'Project'}</span><span style="color:var(--red)">${pct}%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+          <div style="font-size:0.75rem;color:var(--gray-400);margin-top:4px">${Number(p.collected) || 0}/${Number(p.goal) || 0} ${p.unit || ''}</div>
+        </div>`;
+      }).join('') || '<p style="color:var(--gray-400);font-size:0.875rem;padding:12px">No active projects.</p>';
+    }
+
+    return;
+
+  } catch (error) {
+    console.error('Error loading admin overview:', error);
+
+    const statVols = document.getElementById('statVols');
+    const statDons = document.getElementById('statDons');
+    const statProjs = document.getElementById('statProjs');
+    const statEvts = document.getElementById('statEvts');
+
+    if (statVols) statVols.textContent = '0';
+    if (statDons) statDons.textContent = 'R0';
+    if (statProjs) statProjs.textContent = '0';
+    if (statEvts) statEvts.textContent = '0';
+  }
+}
+
+
+async function renderVolunteers() {
+  const filter = document.getElementById('volFilter')?.value || 'all';
+  const tbody = document.getElementById('volunteersTable');
+
+  if (!tbody) return;
+
+  try {
+    const token = localStorage.getItem('bltf_token');
+
+    const response = await fetch('http://localhost:3000/api/admin/volunteers', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to load volunteers');
+    }
+
+    const volunteers = data.volunteers;
+
+    const filtered =
+      filter === 'all'
+        ? volunteers
+        : volunteers.filter(v => v.status === filter);
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">
+              <div class="empty-state__icon">
+                ${Icons.render('users', 'icon icon--xl')}
+              </div>
+              <p>No volunteers found.</p>
             </div>
           </td>
-        </tr>`;
-      }).join('');
+        </tr>
+      `;
+      return;
     }
-  }
 
-  // New volunteers
-  const newVols = document.getElementById('newVolsList');
-  if (newVols) {
-    const recent = volunteers.slice(-4).reverse();
-    newVols.innerHTML = recent.length === 0 ? '<p style="color:var(--gray-400);font-size:0.875rem;padding:12px">No volunteers yet.</p>' :
-      recent.map(v => `
-        <div style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:var(--radius);border:1px solid var(--gray-200)">
-          <div class="avatar">${(v.name||'V').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</div>
-          <div style="flex:1">
-            <div style="font-weight:600;font-size:0.875rem">${v.name}</div>
-            <div style="font-size:0.78rem;color:var(--gray-400)">${v.city||''}</div>
-          </div>
-          <span class="badge badge-${v.status==='approved'?'green':'orange'}">${v.status}</span>
-        </div>`).join('');
-  }
+    tbody.innerHTML = filtered.map(v => {
+      return `
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="avatar" style="width:32px;height:32px;font-size:0.75rem">
+                ${(v.name || 'V')
+                  .split(' ')
+                  .map(n => n[0])
+                  .join('')
+                  .slice(0, 2)
+                  .toUpperCase()}
+              </div>
 
-  // Recent donations table
-  const rdTable = document.getElementById('recentDonsTable');
-  if (rdTable) {
-    rdTable.innerHTML = donations.slice(-5).reverse().map(d => `
-      <tr>
-        <td><strong>${d.donor_name}</strong></td>
-        <td><span class="badge badge-${d.type==='money'?'green':'blue'}">${d.type}</span></td>
-        <td>${d.type==='money'?'R'+d.amount:d.item_description||'—'}</td>
-        <td>${fmt.dateShort(d.date||d.created_at)}</td>
-      </tr>`).join('') || `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--gray-400)">No donations yet.</td></tr>`;
-  }
+              <div>
+                <div style="font-weight:600">${v.name}</div>
+                <div style="font-size:0.78rem;color:var(--gray-400)">
+                  ${v.email}
+                </div>
+              </div>
+            </div>
+          </td>
 
-  // Project progress
-  const pp = document.getElementById('projectProgress');
-  if (pp) {
-    pp.innerHTML = projects.filter(p=>p.status==='active').map(p => {
-      const pct = Math.min(Math.round((p.collected/p.goal)*100),100);
-      return `<div>
-        <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:600;margin-bottom:6px">
-          <span>${p.name}</span><span style="color:var(--red)">${pct}%</span>
-        </div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <div style="font-size:0.75rem;color:var(--gray-400);margin-top:4px">${p.collected}/${p.goal} ${p.unit}</div>
-      </div>`;
+          <td>${v.city || '—'}</td>
+
+          <td>
+            <strong>—</strong>
+          </td>
+
+          <td>
+            <span class="badge badge-${
+              v.status === 'approved'
+                ? 'green'
+                : v.status === 'pending'
+                ? 'orange'
+                : 'red'
+            }">
+              ${v.status}
+            </span>
+          </td>
+
+          <td>
+            ${v.joined_at
+              ? fmt.dateShort(v.joined_at)
+              : '—'}
+          </td>
+
+          <td>
+            <div style="display:flex;gap:6px">
+              ${
+                v.status === 'pending'
+                  ? `
+                    <button
+                      class="btn btn-sm"
+                      style="background:#DCFCE7;color:#16A34A;border:none"
+                      onclick="approveVolunteer('${v.volunteer_id}')">
+                      Approve
+                    </button>
+                  `
+                  : ''
+              }
+
+              <button
+                class="btn btn-sm btn-danger"
+                onclick="deleteVolunteer('${v.volunteer_id}')">
+                Remove
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
     }).join('');
+
+  } catch (error) {
+    console.error('Error loading volunteers:', error);
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6">
+          <div class="empty-state">
+            <p>Failed to load volunteers.</p>
+          </div>
+        </td>
+      </tr>
+    `;
   }
 }
 
-function renderVolunteers() {
-  const filter = document.getElementById('volFilter')?.value || 'all';
-  const volunteers = DB.get('volunteers');
-  const allHours = DB.get('volunteer_hours').filter(h => h.status === 'approved');
-  const filtered = filter === 'all' ? volunteers : volunteers.filter(v => v.status === filter);
-  const tbody = document.getElementById('volunteersTable');
-  if (!tbody) return;
-  if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state__icon">${Icons.render('users', 'icon icon--xl')}</div><p>No volunteers found.</p></div></td></tr>`;
-    return;
-  }
-  tbody.innerHTML = filtered.map(v => {
-    const hours = allHours.filter(h => h.user_id === v.user_id).reduce((s,h) => s+parseFloat(h.hours||0),0);
-    return `<tr>
-      <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="width:32px;height:32px;font-size:0.75rem">${(v.name||'V').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</div><div><div style="font-weight:600">${v.name}</div><div style="font-size:0.78rem;color:var(--gray-400)">${v.email}</div></div></div></td>
-      <td>${v.city||'—'}</td>
-      <td><strong>${hours}h</strong></td>
-      <td><span class="badge badge-${v.status==='approved'?'green':v.status==='pending'?'orange':'red'}">${v.status}</span></td>
-      <td>${fmt.dateShort(v.created_at||new Date().toISOString())}</td>
-      <td>
-        <div style="display:flex;gap:6px">
-          ${v.status==='pending' ? `<button class="btn btn-sm" style="background:#DCFCE7;color:#16A34A;border:none" onclick="approveVolunteer('${v.id}')">Approve</button>` : ''}
-          <button class="btn btn-sm btn-danger" onclick="deleteVolunteer('${v.id}')">Remove</button>
-        </div>
-      </td>
-    </tr>`;
-  }).join('');
-}
 
-function renderAllHours() {
-  const allHours = DB.get('volunteer_hours');
-  const users = DB.get('users');
+async function renderAllHours() {
   const tbody = document.getElementById('allHoursTable');
+
   if (!tbody) return;
-  if (allHours.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state__icon">${Icons.render('clock', 'icon icon--xl')}</div><p>No hours submitted yet.</p></div></td></tr>`;
-    return;
+
+  try {
+    const token = localStorage.getItem('bltf_token');
+
+    const response = await fetch('http://localhost:3000/api/admin/hours', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to load volunteer hours');
+    }
+
+    const allHours = data.hours;
+
+    if (allHours.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">
+              <div class="empty-state__icon">
+                ${Icons.render('clock', 'icon icon--xl')}
+              </div>
+              <p>No hours submitted yet.</p>
+            </div>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = allHours.map(h => {
+      return `
+        <tr>
+          <td>
+            <strong>${h.volunteer_name || 'Unknown'}</strong>
+          </td>
+
+          <td>${h.event_name || '—'}</td>
+
+          <td>
+            ${h.date ? fmt.dateShort(h.date) : '—'}
+          </td>
+
+          <td>
+            <strong>${h.hours}h</strong>
+          </td>
+
+          <td>
+            <span class="badge badge-${
+              h.status === 'approved'
+                ? 'green'
+                : h.status === 'rejected'
+                ? 'red'
+                : 'orange'
+            }">
+              ${h.status}
+            </span>
+          </td>
+
+          <td>
+            ${
+              h.status === 'pending'
+                ? `
+                  <div style="display:flex;gap:6px">
+                    <button
+                      class="btn btn-sm"
+                      style="background:#DCFCE7;color:#16A34A;border:none"
+                      onclick="approveHours('${h.id}')">
+                      Approve
+                    </button>
+
+                    <button
+                      class="btn btn-sm btn-danger"
+                      onclick="rejectHours('${h.id}')">
+                      Reject
+                    </button>
+                  </div>
+                `
+                : `
+                  <span style="font-size:0.8rem;color:var(--gray-400)">
+                    Reviewed
+                  </span>
+                `
+            }
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+  } catch (error) {
+    console.error('Error loading volunteer hours:', error);
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6">
+          <div class="empty-state">
+            <p>Failed to load volunteer hours.</p>
+          </div>
+        </td>
+      </tr>
+    `;
   }
-  tbody.innerHTML = allHours.slice().reverse().map(h => {
-    const user = users.find(u => u.id === h.user_id);
-    return `<tr>
-      <td><strong>${user?.name||'Unknown'}</strong></td>
-      <td>${h.event_name}</td>
-      <td>${fmt.dateShort(h.date)}</td>
-      <td><strong>${h.hours}h</strong></td>
-      <td><span class="badge badge-${h.status==='approved'?'green':h.status==='rejected'?'red':'orange'}">${h.status}</span></td>
-      <td>
-        ${h.status==='pending' ? `
-          <div style="display:flex;gap:6px">
-            <button class="btn btn-sm" style="background:#DCFCE7;color:#16A34A;border:none" onclick="approveHours('${h.id}')">Approve</button>
-            <button class="btn btn-sm btn-danger" onclick="rejectHours('${h.id}')">Reject</button>
-          </div>` : `<span style="font-size:0.8rem;color:var(--gray-400)">Reviewed</span>`}
-      </td>
-    </tr>`;
-  }).join('');
 }
 
 function renderDonations() {
@@ -651,18 +897,42 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Actions
-function approveVolunteer(id) {
-  const vols = DB.get('volunteers');
-  const idx = vols.findIndex(v => v.id === id);
-  if (idx === -1) { Toast.error('Volunteer not found.'); return; }
-  vols[idx].status = 'approved';
-  DB.set('volunteers', vols);
-  const users = DB.get('users');
-  const user = users.find(u => u.id === vols[idx].user_id);
-  if (user) { user.status = 'approved'; DB.set('users', users); }
-  Toast.success('Volunteer approved! A confirmation email has been sent.');
-  renderVolunteers(); loadOverview(); updateBadges();
+
+async function approveVolunteer(id) {
+  try {
+    const token = localStorage.getItem('bltf_token');
+
+    const response = await fetch(
+      `http://localhost:3000/api/admin/volunteers/${id}/approve`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to approve volunteer');
+    }
+
+    Toast.success('Volunteer approved successfully!');
+
+    // Reload the volunteer list from MySQL
+    await renderVolunteers();
+
+    // Refresh the dashboard information
+    loadOverview();
+    updateBadges();
+
+  } catch (error) {
+    console.error('Error approving volunteer:', error);
+    Toast.error('Failed to approve volunteer.');
+  }
 }
+
 function deleteVolunteer(id) {
   if (!confirm('Remove this volunteer?')) return;
   const volunteer = DB.get('volunteers').find(v => v.id === id);
@@ -670,14 +940,72 @@ function deleteVolunteer(id) {
   if (volunteer?.user_id) DB.delete('users', volunteer.user_id);
   Toast.info('Volunteer removed.'); renderVolunteers(); loadOverview(); updateBadges();
 }
-function approveHours(id) {
-  DB.update('volunteer_hours', id, { status: 'approved' });
-  Toast.success('Hours approved! Volunteer has been notified.'); renderAllHours(); loadOverview(); updateBadges();
+
+async function approveHours(id) {
+  try {
+    const token = localStorage.getItem('bltf_token');
+
+    const response = await fetch(
+      `http://localhost:3000/api/admin/hours/${id}/approve`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to approve hours');
+    }
+
+    Toast.success('Hours approved! Volunteer has been notified.');
+
+    await renderAllHours();
+    loadOverview();
+    updateBadges();
+
+  } catch (error) {
+    console.error('Error approving hours:', error);
+    Toast.error('Failed to approve hours.');
+  }
 }
-function rejectHours(id) {
-  DB.update('volunteer_hours', id, { status: 'rejected' });
-  Toast.info('Hours rejected.'); renderAllHours(); updateBadges();
+
+
+async function rejectHours(id) {
+  try {
+    const token = localStorage.getItem('bltf_token');
+
+    const response = await fetch(
+      `http://localhost:3000/api/admin/hours/${id}/reject`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to reject hours');
+    }
+
+    Toast.info('Hours rejected.');
+
+    await renderAllHours();
+    updateBadges();
+
+  } catch (error) {
+    console.error('Error rejecting hours:', error);
+    Toast.error('Failed to reject hours.');
+  }
 }
+
+
 function createAdminEvent() {
   const name = document.getElementById('evName').value.trim();
   const date = document.getElementById('evDate').value;

@@ -135,39 +135,10 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="public/js/icons.js"></script>
 <script src="public/js/config.js"></script>
 <script>
-// Seed demo users on load
-document.addEventListener('DOMContentLoaded', () => {
-  const users = DB.get('users');
-  if (!users.find(u => u.email === 'admin@biglittlethings.org.za')) {
-    DB.insert('users', { name: 'Admin Director', email: 'admin@biglittlethings.org.za', password_hash: btoa('Admin@2025!'), role: 'admin', status: 'approved' });
-  }
-  if (!users.find(u => u.email === 'volunteer@biglittlethings.org.za')) {
-    DB.insert('users', { name: 'Lerato Dlamini', email: 'volunteer@biglittlethings.org.za', password_hash: btoa('Vol@2025!'), role: 'volunteer', status: 'approved', hours: 12, city: 'Pretoria' });
-  }
-  const demoVolunteer = DB.get('users').find(u => u.email === 'volunteer@biglittlethings.org.za');
-  const demoHours = DB.get('volunteer_hours').filter(h => h.user_id === demoVolunteer?.id && h.status === 'approved');
-  if (demoVolunteer && demoHours.reduce((total, record) => total + Number(record.hours || 0), 0) < 10) {
-    DB.insert('volunteer_hours', { user_id: demoVolunteer.id, event_name: 'Demo Volunteer Service', date: '2026-08-24', hours: 10, location: 'Pretoria', notes: 'Demo certificate example', status: 'approved' });
-  }
-  // Redirect if already logged in as admin, otherwise allow account switching
-  const session = JSON.parse(localStorage.getItem('bltf_session') || 'null');
-  if (session) {
-    if (session.role === 'admin') {
-      window.location.href = 'dashboard/admin.html';
-      return;
-    }
-    const notice = document.getElementById('sessionNotice');
-    if (notice) {
-      notice.style.display = 'block';
-      notice.innerHTML = `You are currently signed in as <strong>${session.name}</strong> (<strong>${session.role}</strong>). <a href="#" onclick="event.preventDefault(); logoutSession()">Sign out to switch accounts</a>.`;
-    }
-  }
-});
-
+  
 function switchTab(tab, btn) {
   document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active'));
   if (btn) btn.classList.add('active');
@@ -187,21 +158,76 @@ function logoutSession() {
   window.location.reload();
 }
 
-function doLogin() {
+async function doLogin() {
   const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-  const pass  = document.getElementById('loginPass').value;
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !pass) { Toast.error('Enter a valid email and password.'); return; }
+  const pass = document.getElementById('loginPass').value;
 
-  const users = DB.get('users');
-  const user = users.find(u => u.email.toLowerCase() === email && u.password_hash === btoa(pass));
+  // Validate input
+  if (
+    !email ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+    !pass
+  ) {
+    Toast.error('Enter a valid email and password.');
+    return;
+  }
 
-  if (!user) { Toast.error('Incorrect email or password. Please try again.'); return; }
+  try {
+    Toast.info('Signing you in...');
 
-  localStorage.setItem('bltf_session', JSON.stringify({ id: user.id, name: user.name, role: user.role, email: user.email }));
-  Toast.success(`Welcome back, ${user.name.split(' ')[0]}! Redirecting...`);
-  setTimeout(() => {
-    window.location.href = user.role === 'admin' ? 'dashboard/admin.html' : 'dashboard/volunteer.html';
-  }, 1200);
+    // Send login details to our Node.js backend
+    const response = await fetch('http://localhost:3000/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: email,
+        password: pass
+      })
+    });
+
+    const data = await response.json();
+
+    // Backend rejected the login
+    if (!response.ok || !data.success) {
+      Toast.error(data.message || 'Incorrect email or password.');
+      return;
+    }
+
+    // Save the backend session
+    localStorage.setItem(
+      'bltf_session',
+      JSON.stringify({
+        id: data.user.id,
+        name: data.user.name,
+        role: data.user.role,
+        email: data.user.email,
+        status: data.user.status
+      })
+    );
+
+    // Save JWT token for protected API requests later
+    localStorage.setItem('bltf_token', data.token);
+
+    Toast.success(
+      `Welcome back, ${data.user.name.split(' ')[0]}! Redirecting...`
+    );
+
+    // Redirect based on role
+    setTimeout(() => {
+      window.location.href =
+        data.user.role === 'admin'
+          ? 'dashboard/admin.html'
+          : 'dashboard/volunteer.html';
+    }, 1200);
+
+  } catch (error) {
+    console.error('Login error:', error);
+    Toast.error(
+      'Unable to connect to the server. Make sure the BLTF backend is running.'
+    );
+  }
 }
 
 function doForgot() {

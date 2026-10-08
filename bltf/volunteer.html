@@ -224,7 +224,6 @@
   </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="public/js/icons.js"></script>
 <script src="public/js/config.js"></script>
 <script>
@@ -268,43 +267,115 @@ function signUpForEvent(id, title) {
   Toast.success(`You've signed up for "${title}"! Check your email for details.`);
 }
 
-function registerVolunteer() {
-  const first = document.getElementById('regFirst').value.trim();
-  const last  = document.getElementById('regLast').value.trim();
-  const email = document.getElementById('regEmail').value.trim();
-  const phone = document.getElementById('regPhone').value.trim();
-  const city  = document.getElementById('regCity').value;
-  const pass  = document.getElementById('regPassword').value;
-  const terms = document.getElementById('terms').checked;
+async function registerVolunteer() {
+    const first = document.getElementById('regFirst').value.trim();
+    const last = document.getElementById('regLast').value.trim();
+    const email = document.getElementById('regEmail').value.trim().toLowerCase();
+    const phone = document.getElementById('regPhone').value.trim();
+    const city = document.getElementById('regCity').value;
+    const age = document.getElementById('regAge').value;
+    const skills = document.getElementById('regSkills').value.trim();
+    const pass = document.getElementById('regPassword').value;
+    const terms = document.getElementById('terms').checked;
 
-  if (!/^[A-Za-z][A-Za-z '-]{1,49}$/.test(first) || !/^[A-Za-z][A-Za-z '-]{1,49}$/.test(last)) { Toast.error('Please enter a valid first and last name.'); return; }
-  const normalizedEmail = email.toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) { Toast.error('Please enter a valid email.'); return; }
-  if (!/^\+?[0-9 ()-]{7,20}$/.test(phone) || phone.replace(/\D/g, '').length < 7) { Toast.error('Please enter a valid phone number.'); return; }
-  if (!city) { Toast.error('Please select your city.'); return; }
-  if (pass.length < 8) { Toast.error('Password must be at least 8 characters.'); return; }
-  if (!terms) { Toast.error('Please accept the Terms & Conditions.'); return; }
+    // Validate name
+    if (
+        !/^[A-Za-z][A-Za-z '-]{1,49}$/.test(first) ||
+        !/^[A-Za-z][A-Za-z '-]{1,49}$/.test(last)
+    ) {
+        Toast.error('Please enter a valid first and last name.');
+        return;
+    }
 
-  const volunteer = {
-    name: `${first} ${last}`,
-    email: normalizedEmail, phone, city,
-    skills: document.getElementById('regSkills').value,
-    password_hash: btoa(pass), // In prod: hashed via Supabase Auth
-    hours: 0, status: 'pending', role: 'volunteer'
-  };
+    // Validate email
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        Toast.error('Please enter a valid email.');
+        return;
+    }
 
-  // Check if email exists
-  const existing = DB.get('users').find(u => u.email?.toLowerCase() === normalizedEmail);
-  if (existing) { Toast.error('An account with this email already exists. Please log in.'); return; }
+    // Validate phone
+    if (
+        !/^\+?[0-9 ()-]{7,20}$/.test(phone) ||
+        phone.replace(/\D/g, '').length < 7
+    ) {
+        Toast.error('Please enter a valid phone number.');
+        return;
+    }
 
-  const user = DB.insert('users', { ...volunteer, role: 'volunteer' });
-  DB.insert('volunteers', { ...volunteer, user_id: user.id });
+    // Validate city
+    if (!city) {
+        Toast.error('Please select your city.');
+        return;
+    }
 
-  // Save session
-  localStorage.setItem('bltf_session', JSON.stringify({ id: user.id, name: volunteer.name, role: 'volunteer', email }));
+    // Validate age
+    if (!age) {
+        Toast.error('Please select your age range.');
+        return;
+    }
 
-  Toast.success(`Welcome, ${first}! Your volunteer account is pending approval. Redirecting to your dashboard...`);
-  setTimeout(() => window.location.href = 'dashboard/volunteer.html', 2500);
+    // Validate password
+    if (pass.length < 8) {
+        Toast.error('Password must be at least 8 characters.');
+        return;
+    }
+
+    // Validate terms
+    if (!terms) {
+        Toast.error('Please accept the Terms & Conditions.');
+        return;
+    }
+
+    try {
+        Toast.info('Creating your account...');
+
+        // Send registration details to the Node.js backend
+        const response = await fetch(
+            'http://localhost:3000/api/auth/register',
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: `${first} ${last}`,
+                    email: email,
+                    password: pass,
+                    phone: phone,
+                    city: city,
+                    age: age,
+                    skills: skills || null
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        // Backend rejected the registration
+        if (!response.ok || !data.success) {
+            Toast.error(
+                data.message || 'Registration failed. Please try again.'
+            );
+            return;
+        }
+
+        // Registration was successful
+        Toast.success(
+            `Welcome, ${first}! Your account has been created and is waiting for approval.`
+        );
+
+        // Send the volunteer to the login page
+        setTimeout(() => {
+            window.location.href = 'login.html';
+        }, 2500);
+
+    } catch (error) {
+        console.error('Registration error:', error);
+
+        Toast.error(
+            'Unable to connect to the server. Make sure the BLTF backend is running.'
+        );
+    }
 }
 </script>
 </body>
