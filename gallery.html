@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gallery — Big Little Things Foundation</title>
+  <link rel="icon" href="public/images/logo.png" type="image/png">
+  <link rel="stylesheet" href="public/css/main.css">
+  <style>
+    body { padding-top: var(--nav-h); }
+    .gal-hero { background:var(--black); padding:80px 0 64px; text-align:center; }
+    .gal-hero h1 { color:var(--white); }
+    .gal-hero p { color:rgba(255,255,255,0.6); max-width:480px; margin:16px auto 0; }
+
+    .filter-bar { background:var(--white); border-bottom:1px solid var(--gray-200); padding:16px 0; position:sticky; top:var(--nav-h); z-index:50; }
+    .filter-bar__inner { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .filter-group { display:flex; align-items:center; gap:8px; color:var(--gray-700); font-size:0.85rem; font-weight:600; }
+    .filter-select { min-width:190px; padding:9px 12px; border:1.5px solid var(--gray-200); border-radius:var(--radius); background:var(--white); color:var(--gray-900); font-family:var(--font-body); font-size:0.85rem; cursor:pointer; }
+    .filter-select:focus { outline:none; border-color:var(--red); box-shadow:0 0 0 3px rgba(208,2,27,0.12); }
+    .filter-reset { padding:9px 14px; border:none; border-radius:var(--radius); background:var(--gray-100); color:var(--gray-900); font-family:var(--font-body); font-size:0.85rem; font-weight:600; cursor:pointer; }
+    .filter-reset:hover { background:var(--gray-200); }
+    .filter-count { margin-left:auto; font-size:0.85rem; color:var(--gray-400); }
+
+    .gallery-section { padding:56px 0 80px; }
+    .gallery-grid { columns:4; column-gap:14px; margin-top:40px; }
+    .gallery-item { break-inside:avoid; margin-bottom:14px; border-radius:var(--radius); overflow:hidden; cursor:pointer; position:relative; display:block; }
+    .gallery-item img, .gallery-item .img-placeholder { width:100%; display:block; border-radius:var(--radius); transition:transform 0.4s ease; }
+    .gallery-item:hover .img-placeholder { transform:scale(1.04); }
+    .img-placeholder { background-size:cover!important; background-position:center!important; }
+    .gallery-item__overlay { position:absolute; inset:0; background:linear-gradient(0deg,rgba(13,13,13,0.85) 0%,transparent 50%); opacity:0; transition:var(--transition); border-radius:var(--radius); display:flex; flex-direction:column; justify-content:flex-end; padding:16px; }
+    .gallery-item:hover .gallery-item__overlay { opacity:1; }
+    .gallery-item__caption { color:var(--white); font-size:0.875rem; font-weight:600; }
+    .gallery-item__meta { color:rgba(255,255,255,0.6); font-size:0.78rem; margin-top:3px; }
+
+    /* Lightbox */
+    .lightbox { position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:3000; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:var(--transition); }
+    .lightbox.open { opacity:1; pointer-events:all; }
+    .lightbox__img-wrap { max-width:80vw; max-height:85vh; position:relative; }
+    .lightbox__img { width:100%; max-height:80vh; object-fit:contain; border-radius:var(--radius); }
+    .lightbox__img-placeholder { width:70vw; max-height:80vh; border-radius:var(--radius); background-size:cover!important; background-position:center!important; min-height:400px; }
+    .lightbox__caption { color:var(--white); text-align:center; margin-top:16px; font-size:0.9rem; }
+    .lightbox__meta { color:rgba(255,255,255,0.45); text-align:center; font-size:0.8rem; margin-top:4px; }
+    .lightbox__close { position:fixed; top:20px; right:24px; width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.1); border:none; color:var(--white); font-size:1.3rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:var(--transition); }
+    .lightbox__close:hover { background:var(--red); }
+    .lightbox__nav { position:fixed; top:50%; transform:translateY(-50%); width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.1); border:none; color:var(--white); font-size:1.2rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:var(--transition); }
+    .lightbox__nav:hover { background:var(--red); }
+    .lightbox__nav-prev { left:16px; }
+    .lightbox__nav-next { right:16px; }
+
+    @media(max-width:1024px){ .gallery-grid{columns:3} }
+    @media(max-width:768px){ .gallery-grid{columns:2} .lightbox__img-placeholder{width:92vw;min-height:240px} .filter-count{margin-left:0;width:100%} }
+    @media(max-width:480px){ .gallery-grid{columns:1} .filter-group{width:100%} .filter-select{flex:1;min-width:0} }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="container nav__inner">
+    <a href="index.html" class="nav__logo"><img src="public/images/logo.png" alt="Big Little Things Foundation" class="nav__logo-img"></a>
+    <ul class="nav__links">
+      <li><a href="index.html">Home</a></li><li><a href="about.html">About</a></li>
+      <li><a href="projects.html">Projects</a></li><li><a href="volunteer.html">Volunteer</a></li>
+      <li><a href="gallery.html" class="active">Gallery</a></li><li><a href="contact.html">Contact</a></li>
+    </ul>
+    <div class="nav__cta">
+      <a href="login.html" class="btn btn-outline btn-sm">Login</a>
+      <a href="donate.html" class="btn btn-primary btn-sm">Donate Now</a>
+    </div>
+  </div>
+</nav>
+
+<section class="gal-hero">
+  <div class="container">
+    <span class="section-label" style="justify-content:center;color:rgba(255,255,255,0.45)">Visual Stories</span>
+    <h1 class="animate-up">Impact in Pictures</h1>
+    <p class="animate-up delay-1">Every photo tells the story of a community touched, a life changed, a volunteer who showed up. This is what impact looks like.</p>
+  </div>
+</section>
+
+<div class="filter-bar">
+  <div class="container">
+    <div class="filter-bar__inner">
+      <label class="filter-group" for="yearFilter">
+        <span>Year</span>
+        <select id="yearFilter" class="filter-select">
+          <option value="all">All Years</option>
+        </select>
+      </label>
+      <label class="filter-group" for="eventFilter">
+        <span>Event type</span>
+        <select id="eventFilter" class="filter-select">
+          <option value="all">All Event Types</option>
+        </select>
+      </label>
+      <button type="button" class="filter-reset" onclick="resetFilters()">Reset Filters</button>
+      <span class="filter-count" id="photoCount">Loading photos…</span>
+    </div>
+  </div>
+</div>
+
+<section class="gallery-section">
+  <div class="container">
+    <div class="gallery-grid" id="galleryGrid"></div>
+  </div>
+</section>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox__close" onclick="closeLightbox()"><span class="icon" data-icon="x"></span></button>
+  <button class="lightbox__nav lightbox__nav-prev" onclick="navLightbox(-1)"><span class="icon" data-icon="chevron-left"></span></button>
+  <div class="lightbox__img-wrap">
+    <div class="lightbox__img-placeholder" id="lbImg"></div>
+    <div class="lightbox__caption" id="lbCaption"></div>
+    <div class="lightbox__meta" id="lbMeta"></div>
+  </div>
+  <button class="lightbox__nav lightbox__nav-next" onclick="navLightbox(1)"><span class="icon" data-icon="chevron-right"></span></button>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid"><div class="footer__brand"><a href="index.html" class="nav__logo"><img src="public/images/logo.png" alt="Big Little Things Foundation" class="nav__logo-img"></a><p>Empowering communities through youth-driven initiatives across South Africa.</p><div class="footer__social" style="margin-top:20px"><a href="https://www.instagram.com/biglittlethings.foundation?igsi=MTYyMGE0NzBtMTRicQ==" title="Instagram" target="_blank" rel="noopener" aria-label="Instagram"><span class="icon" data-icon="instagram" aria-hidden="true"></span></a><a href="https://www.tiktok.com/@bltfoundation?_r=1&amp;_t=ZS-999eoTVYr5z" title="TikTok" target="_blank" rel="noopener" aria-label="TikTok"><span class="icon" data-icon="tiktok" aria-hidden="true"></span></a><a href="http://www.linkedin.com/in/big-little-things-foundation-ab38b5441" title="LinkedIn" target="_blank" rel="noopener" aria-label="LinkedIn"><span class="icon" data-icon="linkedin" aria-hidden="true"></span></a></div></div><div class="footer__col"><h4>Quick Links</h4><ul><li><a href="index.html">Home</a></li><li><a href="about.html">About Us</a></li><li><a href="projects.html">Projects</a></li><li><a href="gallery.html">Gallery</a></li></ul></div><div class="footer__col"><h4>Get Involved</h4><ul><li><a href="volunteer.html">Volunteer</a></li><li><a href="donate.html">Donate</a></li><li><a href="contact.html">Contact</a></li></ul></div><div class="footer__col"><h4>Contact</h4><ul><li><a href="tel:0810130522">Hloni: 081 013 0522</a></li><li><a href="tel:0725169605">Iman: 072 516 9605</a></li><li><a href="tel:0781626965">Chloe: 078 162 6965</a></li><li>South Africa</li></ul></div></div>
+    <div class="footer__bottom"><p>© 2025 Big Little Things Foundation. NPO Reg: 000/000/NPO</p></div>
+  </div>
+</footer>
+
+<script src="public/js/icons.js"></script>
+<script src="public/js/config.js"></script>
+<script src="public/js/gallery-images.js"></script>
+<script>
+const galleryData = GalleryImages.all().map(item => ({
+  ...item,
+  event: item.groupName,
+  category: item.groupId,
+  h: 260 + (item.id.length % 4) * 35
+}));
+
+const uploadedImages = DB.get('gallery_uploads').map(image => ({
+  id: `upload-${image.id || Math.random().toString(36).slice(2)}`,
+  groupId: 'uploads',
+  groupName: image.event || 'Uploaded Photos',
+  url: image.url,
+  caption: image.caption || 'Uploaded Photo',
+  event: image.event || 'Uploaded Photos',
+  location: image.location || '',
+  category: 'uploads',
+  date: image.date ? new Date(image.date).toLocaleDateString('en-ZA') : '',
+  h: 300
+}));
+
+const allGalleryData = [...galleryData, ...uploadedImages];
+let currentYear = 'all';
+let currentEvent = 'all';
+let currentIndex = 0;
+let filteredData = [...allGalleryData];
+
+function getYearFromUrl(url) {
+  const match = url.match(/\b(19|20)\d{2}\b/);
+  return match ? match[0] : 'Unknown';
+}
+
+function getEventTypeFromName(name) {
+  return name.replace(/\s*[-–—]\s*.*$/, '').trim();
+}
+
+function renderFilters() {
+  const years = [...new Set(allGalleryData.map(item => getYearFromUrl(item.url)))].sort((a, b) => Number(b) - Number(a));
+  const eventTypes = [...new Set(allGalleryData.map(item => getEventTypeFromName(item.event)))].sort((a, b) => a.localeCompare(b));
+  const yearFilter = document.getElementById('yearFilter');
+  const eventFilter = document.getElementById('eventFilter');
+
+  years.forEach(year => {
+    const option = document.createElement('option');
+    option.value = year;
+    option.textContent = year;
+    yearFilter.appendChild(option);
+  });
+
+  eventTypes.forEach(eventType => {
+    const option = document.createElement('option');
+    option.value = eventType;
+    option.textContent = eventType;
+    eventFilter.appendChild(option);
+  });
+
+  yearFilter.addEventListener('change', (e) => {
+    currentYear = e.target.value;
+    filterGallery();
+  });
+
+  eventFilter.addEventListener('change', (e) => {
+    currentEvent = e.target.value;
+    filterGallery();
+  });
+}
+
+function resetFilters() {
+  currentYear = 'all';
+  currentEvent = 'all';
+  document.getElementById('yearFilter').value = 'all';
+  document.getElementById('eventFilter').value = 'all';
+  filterGallery();
+}
+
+function filterGallery() {
+  filteredData = allGalleryData.filter(item => {
+    const yearMatches = currentYear === 'all' || getYearFromUrl(item.url) === currentYear;
+    const eventMatches = currentEvent === 'all' || getEventTypeFromName(item.event) === currentEvent;
+    return yearMatches && eventMatches;
+  });
+
+  document.getElementById('photoCount').textContent = `${filteredData.length} photo${filteredData.length !== 1 ? 's' : ''}`;
+  renderGallery();
+}
+
+function renderGallery() {
+  const grid = document.getElementById('galleryGrid');
+  grid.innerHTML = filteredData.map((item, i) => `
+    <div class="gallery-item" onclick="openLightbox(${i})" data-category="${item.category}">
+      <div class="img-placeholder" style="background:url('${item.url}') center/cover; height:${item.h}px"></div>
+      <div class="gallery-item__overlay">
+        <div class="gallery-item__caption">${item.caption}</div>
+        <div class="gallery-item__meta">${item.date ? `${item.event} · ${item.date}` : item.event}</div>
+      </div>
+    </div>`).join('');
+}
+
+function openLightbox(index) {
+  currentIndex = index;
+  updateLightbox();
+  document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function navLightbox(dir) {
+  currentIndex = (currentIndex + dir + filteredData.length) % filteredData.length;
+  updateLightbox();
+}
+function updateLightbox() {
+  const item = filteredData[currentIndex];
+  document.getElementById('lbImg').style.background = `url('${item.url}') center/cover`;
+  document.getElementById('lbCaption').textContent = item.caption;
+  document.getElementById('lbMeta').textContent = item.date ? `${item.event} · ${item.date}` : item.event;
+}
+document.getElementById('lightbox').addEventListener('click', function(e) { if(e.target===this) closeLightbox(); });
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('lightbox').classList.contains('open')) return;
+  if (e.key === 'ArrowLeft') navLightbox(-1);
+  if (e.key === 'ArrowRight') navLightbox(1);
+  if (e.key === 'Escape') closeLightbox();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderFilters();
+  renderGallery();
+  document.getElementById('photoCount').textContent = `${filteredData.length} photo${filteredData.length !== 1 ? 's' : ''}`;
+});
+</script>
+</body>
+</html>
