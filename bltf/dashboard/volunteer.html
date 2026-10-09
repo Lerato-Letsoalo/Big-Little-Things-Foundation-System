@@ -115,7 +115,7 @@
       </div>
 
       <div class="panel">
-        <div class="panel__header"><span class="panel__title">Hours Progress to Next Certificate</span></div>
+        <div class="panel__header"><span class="panel__title">Certificate Status</span></div>
         <div class="panel__body">
           <div id="certProgress"></div>
         </div>
@@ -172,14 +172,11 @@
         <div class="panel__body" style="background:linear-gradient(120deg,#0D0D0D,#2C0008);border-radius:var(--radius-lg);padding:32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px">
           <div>
             <p style="color:rgba(255,255,255,0.55);font-size:0.85rem;margin-bottom:6px">CERTIFICATE MILESTONES</p>
-            <h3 style="color:white;font-size:1.4rem">Earn certificates at 10, 25, 50 & 100 hours</h3>
-            <p style="color:rgba(255,255,255,0.55);margin-top:8px;font-size:0.875rem">Certificates are automatically generated once your hours are approved and you reach a milestone.</p>
+            <h3 style="color:white;font-size:1.4rem">One certificate for every approved hour submission</h3>
+            <p style="color:rgba(255,255,255,0.55);margin-top:8px;font-size:0.875rem">Your certificate is issued when an admin approves your hours and is available here to download.</p>
           </div>
           <div style="display:flex;gap:12px;flex-wrap:wrap">
-            <div style="text-align:center;background:rgba(255,255,255,0.06);padding:16px 20px;border-radius:var(--radius)"><div style="font-family:var(--font-display);font-size:1.5rem;font-weight:900;color:var(--red)">10h</div><div style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-top:4px">Bronze</div></div>
-            <div style="text-align:center;background:rgba(255,255,255,0.06);padding:16px 20px;border-radius:var(--radius)"><div style="font-family:var(--font-display);font-size:1.5rem;font-weight:900;color:#C0C0C0">25h</div><div style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-top:4px">Silver</div></div>
-            <div style="text-align:center;background:rgba(255,255,255,0.06);padding:16px 20px;border-radius:var(--radius)"><div style="font-family:var(--font-display);font-size:1.5rem;font-weight:900;color:#FFD700">50h</div><div style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-top:4px">Gold</div></div>
-            <div style="text-align:center;background:rgba(255,255,255,0.06);padding:16px 20px;border-radius:var(--radius)"><div style="font-family:var(--font-display);font-size:1.5rem;font-weight:900;color:#E5D3C0">100h</div><div style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-top:4px">Platinum</div></div>
+            <span style="color:rgba(255,255,255,0.7);max-width:260px">PDF certificates are stored with your volunteer account.</span>
           </div>
         </div>
       </div>
@@ -235,52 +232,66 @@
   </main>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="../public/js/icons.js"></script>
 <script src="../public/js/config.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 let currentUser = null;
 let userVolData = null;
+let myHours = [];
+let myCertificates = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const session = JSON.parse(localStorage.getItem('bltf_session') || 'null');
-  if (!session) { window.location.href = '../login.html'; return; }
-  if (session.role === 'admin') { window.location.href = 'admin.html'; return; }
-  currentUser = session;
-  loadUserData();
-  loadOverview();
-  loadEvents();
+  currentUser = await Auth.requireAuth();
+  if (!currentUser) return;
+  if (currentUser.role === 'admin') { window.location.href = 'admin.html'; return; }
+  try {
+    await refreshVolunteerData();
+    loadEvents();
+  } catch (error) {
+    Toast.error(error.message);
+  }
 });
 
+async function refreshVolunteerData() {
+  const [hoursResponse, certificatesResponse, profileResponse] = await Promise.all([
+    Api.get('/hours/mine'),
+    Api.get(`/certificates/${currentUser.id}`),
+    Api.get('/auth/me')
+  ]);
+  currentUser = profileResponse.user;
+  myHours = hoursResponse.hours;
+  myCertificates = certificatesResponse.certificates;
+  loadUserData();
+  loadOverview();
+  loadAllHours();
+}
+
 function loadUserData() {
-  const users = DB.get('users');
-  userVolData = users.find(u => u.id === currentUser.id) || currentUser;
+  userVolData = currentUser;
   const initials = (userVolData.name || 'VL').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
   document.getElementById('sidebarName').textContent = userVolData.name || currentUser.name;
   document.getElementById('welcomeName').textContent = (userVolData.name || currentUser.name).split(' ')[0] + '!';
   document.getElementById('headerAvatar').textContent = initials;
   document.getElementById('profileAvatar').textContent = initials;
   document.getElementById('profileName').textContent = userVolData.name || currentUser.name;
+  document.getElementById('profileSince').textContent = userVolData.created_at ? new Date(userVolData.created_at).getFullYear() : '—';
   document.getElementById('editName').value = userVolData.name || '';
   document.getElementById('editEmail').value = userVolData.email || '';
   document.getElementById('editPhone').value = userVolData.phone || '';
   document.getElementById('editSkills').value = userVolData.skills || '';
+  document.getElementById('editAbout').value = userVolData.about || '';
   if (userVolData.city) document.getElementById('editCity').value = userVolData.city;
 }
 
 function loadOverview() {
-  const myHours = DB.get('volunteer_hours').filter(h => h.user_id === currentUser.id);
   const approved = myHours.filter(h => h.status === 'approved');
   const totalHours = approved.reduce((s,h) => s + parseFloat(h.hours||0), 0);
   const thisMonth = approved.filter(h => new Date(h.date).getMonth() === new Date().getMonth()).reduce((s,h) => s+parseFloat(h.hours||0),0);
 
-  const certs = getCertificates(totalHours);
-
   document.getElementById('statHours').textContent = totalHours;
   document.getElementById('statHoursChange').textContent = `+${thisMonth} this month`;
   document.getElementById('statEvents').textContent = new Set(approved.map(h=>h.event_name)).size;
-  document.getElementById('statCerts').textContent = certs.earned;
+  document.getElementById('statCerts').textContent = myCertificates.length;
   document.getElementById('statRank').textContent = getRank(totalHours);
   document.getElementById('profileHours').textContent = totalHours;
 
@@ -289,27 +300,17 @@ function loadOverview() {
   if (myHours.length === 0) {
     recentBody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-state__icon">${Icons.render('clipboard-list', 'icon icon--xl')}</div><p>No hours logged yet.</p></div></td></tr>`;
   } else {
-    recentBody.innerHTML = myHours.slice(-5).reverse().map(h => `
+    recentBody.innerHTML = myHours.slice(0, 5).map(h => `
       <tr>
-        <td><strong>${h.event_name}</strong><br><small style="color:var(--gray-400)">${h.location||''}</small></td>
+        <td><strong>${escapeHtml(h.event_name)}</strong><br><small style="color:var(--gray-400)">${escapeHtml(h.location||'')}</small></td>
         <td>${fmt.dateShort(h.date)}</td>
         <td><strong>${h.hours}h</strong></td>
         <td><span class="badge badge-${h.status==='approved'?'green':h.status==='rejected'?'red':'orange'}">${h.status}</span></td>
       </tr>`).join('');
   }
 
-  // Cert progress
-  const milestones = [10,25,50,100];
-  const nextMilestone = milestones.find(m => m > totalHours) || 100;
-  const prevMilestone = milestones.filter(m => m <= totalHours).pop() || 0;
-  const pct = Math.min(Math.round(((totalHours - prevMilestone)/(nextMilestone - prevMilestone))*100),100);
   document.getElementById('certProgress').innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div><span style="font-size:1.4rem;font-weight:900;color:var(--red)">${totalHours}</span> <span style="color:var(--gray-700);font-size:0.875rem">hours logged</span></div>
-      <div style="font-size:0.875rem;color:var(--gray-700)">Next milestone: <strong>${nextMilestone}h</strong></div>
-    </div>
-    <div class="progress-bar" style="height:12px"><div class="progress-fill" style="width:${pct}%"></div></div>
-    <div style="font-size:0.8rem;color:var(--gray-400);margin-top:8px">${nextMilestone-totalHours} hours until your next certificate</div>`;
+    <div style="font-size:0.95rem;color:var(--gray-700)">${approved.length} approved hour entries · ${myCertificates.length} certificates issued</div>`;
 }
 
 function loadEvents() {
@@ -356,16 +357,15 @@ function loadEvents() {
 }
 
 function loadAllHours() {
-  const myHours = DB.get('volunteer_hours').filter(h => h.user_id === currentUser.id);
   const body = document.getElementById('allHoursTable');
   if (!body) return;
   if (myHours.length === 0) {
     body.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-state__icon">${Icons.render('clock', 'icon icon--xl')}</div><p>No hours logged yet.</p></div></td></tr>`;
     return;
   }
-  body.innerHTML = myHours.reverse().map(h => `
+  body.innerHTML = myHours.map(h => `
     <tr>
-      <td><strong>${h.event_name}</strong></td>
+      <td><strong>${escapeHtml(h.event_name)}</strong></td>
       <td>${fmt.dateShort(h.date)}</td>
       <td><strong>${h.hours}h</strong></td>
       <td><span class="badge badge-${h.status==='approved'?'green':h.status==='rejected'?'red':'orange'}">${h.status}</span></td>
@@ -373,33 +373,23 @@ function loadAllHours() {
 }
 
 function loadCertificates() {
-  const myHours = DB.get('volunteer_hours').filter(h => h.user_id === currentUser.id && h.status === 'approved');
-  const totalHours = myHours.reduce((s,h) => s+parseFloat(h.hours||0),0);
-  const milestones = [{h:10,label:'Bronze',color:'#D0021B'},{h:25,label:'Silver',color:'#FFFFFF'},{h:50,label:'Gold',color:'#D0021B'},{h:100,label:'Platinum',color:'#FFFFFF'}];
-  const earned = milestones.filter(m => totalHours >= m.h);
   const list = document.getElementById('certsList');
-  if (earned.length === 0) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-state__icon">${Icons.render('graduation-cap', 'icon icon--xl')}</div><h3>No certificates yet</h3><p>Log 10 approved hours to earn your first certificate!</p><button class="btn btn-primary" style="margin-top:16px" onclick="showPage('hours')">Log Hours</button></div>`;
+  if (myCertificates.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-state__icon">${Icons.render('graduation-cap', 'icon icon--xl')}</div><h3>No certificates yet</h3><p>A certificate will appear here after an admin approves your submitted hours.</p><button class="btn btn-primary" style="margin-top:16px" onclick="showPage('hours')">Log Hours</button></div>`;
     return;
   }
-  list.innerHTML = earned.map(m => `
+  list.innerHTML = myCertificates.map(certificate => `
     <div style="background:linear-gradient(135deg,#0D0D0D,#1A1A1A);border-radius:var(--radius-lg);padding:32px;border:1px solid rgba(255,255,255,0.08);position:relative;overflow:hidden">
       <img src="../public/images/logo.png" alt="Big Little Things Foundation" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid #D0021B;margin-bottom:18px">
       <div style="position:absolute;top:-20px;right:-20px;opacity:0.06">${Icons.render('graduation-cap', 'icon icon--xl')}</div>
       <div style="font-size:0.75rem;color:rgba(255,255,255,0.4);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:12px">Certificate of Volunteering</div>
-      <div style="font-family:var(--font-display);font-size:1.5rem;font-weight:700;color:${m.color}">${m.label} Volunteer</div>
-      <div style="color:rgba(255,255,255,0.6);font-size:0.875rem;margin-top:8px">Awarded to <strong style="color:white">${currentUser.name}</strong> for completing <strong style="color:${m.color}">${m.h}+ volunteer hours</strong></div>
-      <div style="color:rgba(255,255,255,0.35);font-size:0.78rem;margin-top:6px">Big Little Things Foundation · 2025</div>
+      <div style="font-family:var(--font-display);font-size:1.5rem;font-weight:700;color:#fff">${escapeHtml(certificate.event_name)}</div>
+      <div style="color:rgba(255,255,255,0.6);font-size:0.875rem;margin-top:8px">Awarded to <strong style="color:white">${escapeHtml(currentUser.name)}</strong> for <strong style="color:white">${certificate.hours_at_issue} volunteer hours</strong></div>
+      <div style="color:rgba(255,255,255,0.35);font-size:0.78rem;margin-top:6px">Issued ${fmt.dateShort(certificate.issued_at)}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:20px">
-        <button class="btn" onclick="downloadCertificate('${m.label}','${m.h}','png')" style="background:var(--red);color:#fff;border-color:var(--red);font-weight:700">${Icons.render('download', 'icon icon--sm')} PNG</button>
-        <button class="btn" onclick="downloadCertificate('${m.label}','${m.h}','pdf')" style="background:#fff;color:#000;border-color:#fff;font-weight:700">${Icons.render('download', 'icon icon--sm')} PDF</button>
+        <button class="btn" onclick="downloadCertificate('${certificate.id}')" style="background:#fff;color:#000;border-color:#fff;font-weight:700">${Icons.render('download', 'icon icon--sm')} Download PDF</button>
       </div>
     </div>`).join('');
-}
-
-function getCertificates(hours) {
-  const milestones = [10,25,50,100];
-  return { earned: milestones.filter(m => hours >= m).length, next: milestones.find(m => m > hours) || null };
 }
 function getRank(hours) {
   if (hours >= 100) return 'Platinum';
@@ -409,7 +399,7 @@ function getRank(hours) {
   return 'Newcomer';
 }
 
-function submitHours() {
+async function submitHours() {
   const event = document.getElementById('logEvent').value.trim();
   const date  = document.getElementById('logDate').value;
   const hours = Number(document.getElementById('logHours').value);
@@ -419,70 +409,47 @@ function submitHours() {
   if (!date) { Toast.error('Please select the date.'); return; }
   if (!Number.isFinite(hours) || hours < 0.5 || hours > 24) { Toast.error('Please enter between 0.5 and 24 hours.'); return; }
   if (new Date(`${date}T00:00:00`) > new Date()) { Toast.error('Hours cannot be logged for a future date.'); return; }
-  DB.insert('volunteer_hours', { user_id: currentUser.id, event_name: event, date, hours, location, notes, status: 'pending' });
-  Toast.success('Hours submitted! Pending admin approval.');
+  try {
+    await Api.post('/hours', { event_name: event, date, hours, location, notes });
+    Toast.success('Hours submitted! Pending admin approval.');
+  } catch (error) {
+    Toast.error(error.message);
+    return;
+  }
   document.getElementById('logEvent').value = '';
   document.getElementById('logDate').value = '';
   document.getElementById('logHours').value = '';
   document.getElementById('logLocation').value = '';
   document.getElementById('logNotes').value = '';
-  loadAllHours();
-  loadOverview();
+  await refreshVolunteerData();
 }
 
 function joinEvent(id, title) {
   Toast.success(`You've signed up for "${title}"! Check your email for confirmation.`);
 }
 
-function saveProfile() {
-  const users = DB.get('users');
-  const idx = users.findIndex(u => u.id === currentUser.id);
-  if (idx !== -1) {
-    users[idx].name  = document.getElementById('editName').value;
-    users[idx].phone = document.getElementById('editPhone').value;
-    users[idx].city  = document.getElementById('editCity').value;
-    users[idx].skills= document.getElementById('editSkills').value;
-    DB.set('users', users);
-    currentUser.name = users[idx].name;
-    localStorage.setItem('bltf_session', JSON.stringify(currentUser));
+async function saveProfile() {
+  try {
+    const { user } = await Api.patch('/auth/me', {
+      name: document.getElementById('editName').value,
+      phone: document.getElementById('editPhone').value,
+      city: document.getElementById('editCity').value,
+      skills: document.getElementById('editSkills').value,
+      about: document.getElementById('editAbout').value
+    });
+    currentUser = user;
     loadUserData();
     Toast.success('Profile updated successfully!');
+  } catch (error) {
+    Toast.error(error.message);
   }
 }
 
-async function downloadCertificate(level, hours, format) {
-  const logo = document.querySelector('.sidebar__logo-icon img');
-  if (!logo?.complete) await new Promise(resolve => { logo.onload = resolve; logo.onerror = resolve; });
-  const canvas = document.createElement('canvas');
-  canvas.width = 1600; canvas.height = 1120;
-  const context = canvas.getContext('2d');
-  context.fillStyle = '#FAFAF8'; context.fillRect(0, 0, canvas.width, canvas.height);
-  context.strokeStyle = '#D0021B'; context.lineWidth = 18; context.strokeRect(30, 30, 1540, 1060);
-  context.strokeStyle = 'rgba(208,2,27,0.25)'; context.lineWidth = 3; context.strokeRect(58, 58, 1484, 1004);
-  context.fillStyle = '#D0021B'; context.beginPath(); context.arc(800, 180, 72, 0, Math.PI * 2); context.fill();
-  if (logo) { context.save(); context.beginPath(); context.arc(800, 180, 58, 0, Math.PI * 2); context.clip(); context.drawImage(logo, 742, 122, 116, 116); context.restore(); }
-  const centerText = (text, y, size, color, family = 'DM Sans') => { context.font = `${size}px ${family}`; context.fillStyle = color; context.textAlign = 'center'; context.fillText(text, 800, y); };
-  centerText('BIG LITTLE THINGS FOUNDATION · NPO', 315, 24, '#777', 'DM Sans');
-  centerText('CERTIFICATE OF VOLUNTEER SERVICE', 390, 30, '#D0021B', 'DM Sans');
-  centerText('This is to certify that', 460, 22, '#777');
-  centerText(currentUser.name, 550, 62, '#0D0D0D', 'Playfair Display');
-  centerText(`${level} Volunteer · ${hours}+ Hours`, 625, 34, '#D0021B', 'Playfair Display');
-  centerText('has demonstrated outstanding commitment to community service', 710, 23, '#555');
-  centerText(`and completed ${hours}+ hours of volunteer work.`, 748, 23, '#555');
-  context.strokeStyle = '#DDD'; context.lineWidth = 2; context.beginPath(); context.moveTo(250, 870); context.lineTo(1350, 870); context.stroke();
-  context.textAlign = 'center'; context.font = '20px DM Sans'; context.fillStyle = '#555'; context.fillText('Nomsa Dlamini · Executive Director', 400, 925); context.fillText('Sipho Nkosi · Volunteer Coordinator', 1200, 925);
-  context.fillStyle = '#999'; context.font = '18px DM Sans'; context.fillText(`Issued ${new Date().toLocaleDateString('en-ZA')} · BLTF/${new Date().getFullYear()}`, 800, 1010);
-  const imageUrl = canvas.toDataURL('image/png');
-  const filename = `BLTF-${level}-Certificate-${currentUser.name.replace(/\s+/g, '-')}`;
-  if (format === 'png') {
-    const link = document.createElement('a'); link.href = imageUrl; link.download = `${filename}.png`; link.click();
-    return;
-  }
-  if (window.jspdf?.jsPDF) {
-    const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'px', format: [1600, 1120] });
-    pdf.addImage(imageUrl, 'PNG', 0, 0, 1600, 1120); pdf.save(`${filename}.pdf`);
-  } else {
-    Toast.error('PDF download is unavailable while offline. Please try again when connected.');
+async function downloadCertificate(certificateId) {
+  try {
+    await Api.download(`/certificates/download/${certificateId}`, `BLTF-Certificate-${certificateId}.pdf`);
+  } catch (error) {
+    Toast.error(error.message);
   }
 }
 
@@ -502,10 +469,7 @@ function showPage(page) {
   if (page === 'certificates') loadCertificates();
 }
 
-function logOut() {
-  localStorage.removeItem('bltf_session');
-  window.location.href = '../login.html';
-}
+function logOut() { Auth.signOut(); }
 </script>
 </body>
 </html>

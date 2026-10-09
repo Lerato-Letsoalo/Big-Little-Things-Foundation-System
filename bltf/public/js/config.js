@@ -1,51 +1,100 @@
 // =============================================
 //  BIG LITTLE THINGS FOUNDATION
-//  config.js — Supabase + Shared Utilities
+//  config.js — Backend API + Shared Utilities
 // =============================================
 
-// ── Supabase Config ──────────────────────────
-// Replace with your actual Supabase project values
-const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
-const SUPABASE_KEY = 'YOUR_ANON_KEY'; // public anon key only
+const API_BASE_URL = (window.BLTF_API_URL || 'http://127.0.0.1:5000/api').replace(/\/$/, '');
 
-// Load Supabase from CDN (loaded in HTML before this script)
-let supabaseClient = null;
-if (typeof window !== 'undefined' && window.supabase && !SUPABASE_URL.includes('YOUR_PROJECT') && !SUPABASE_KEY.includes('YOUR_ANON_KEY')) {
-  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const Api = {
+  async request(path, options = {}) {
+    const session = Auth.getSession();
+    const headers = new Headers(options.headers || {});
+    if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json');
+    if (session?.token) headers.set('Authorization', `Bearer ${session.token}`);
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers,
+      body: options.body && typeof options.body !== 'string' && !(options.body instanceof FormData)
+        ? JSON.stringify(options.body)
+        : options.body
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || `Request failed (${response.status})`);
+    return payload;
+  },
+  get(path) { return this.request(path); },
+  post(path, body = {}) { return this.request(path, { method: 'POST', body }); },
+  patch(path, body = {}) { return this.request(path, { method: 'PATCH', body }); },
+  async download(path, filename) {
+    const session = Auth.getSession();
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      headers: session?.token ? { Authorization: `Bearer ${session.token}` } : {}
+    });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.error || `Download failed (${response.status})`);
+    }
+    const url = URL.createObjectURL(await response.blob());
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+};
+
+function escapeHtml(value) {
+  const entities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  return String(value ?? '').replace(/[&<>"']/g, character => entities[character]);
 }
 
 // ── Auth Helpers ──────────────────────────────
 const Auth = {
+  getSession() {
+    for (const storage of [sessionStorage, localStorage]) {
+      try {
+        const session = JSON.parse(storage.getItem('bltf_session') || 'null');
+        if (session?.token) return session;
+      } catch { storage.removeItem('bltf_session'); }
+    }
+    return null;
+  },
+  setSession(token, user, remember = false) {
+    this.clearSession();
+    const storage = remember ? localStorage : sessionStorage;
+    storage.setItem('bltf_session', JSON.stringify({ ...user, token }));
+  },
+  clearSession() {
+    localStorage.removeItem('bltf_session');
+    sessionStorage.removeItem('bltf_session');
+  },
   async getUser() {
-    if (!supabaseClient) return null;
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    return user;
+    if (!this.getSession()) return null;
+    try {
+      const { user } = await Api.get('/auth/me');
+      const session = this.getSession();
+      this.setSession(session.token, user, Boolean(localStorage.getItem('bltf_session')));
+      return user;
+    } catch {
+      this.clearSession();
+      return null;
+    }
   },
-  async getProfile(userId) {
-    const { data } = await supabaseClient.from('users').select('*').eq('id', userId).single();
-    return data;
-  },
-  async isAdmin() {
-    const user = await this.getUser();
-    if (!user) return false;
-    const profile = await this.getProfile(user.id);
-    return profile?.role === 'admin';
-  },
-  async requireAuth(redirectTo = '/login.html') {
+  async requireAuth(redirectTo = '../login.html') {
     const user = await this.getUser();
     if (!user) { window.location.href = redirectTo; return null; }
     return user;
   },
   async requireAdmin() {
-    const user = await this.requireAuth('/login.html');
+    const user = await this.requireAuth();
     if (!user) return null;
-    const isAdmin = await this.isAdmin();
-    if (!isAdmin) { window.location.href = '/dashboard/volunteer.html'; return null; }
+    if (user.role !== 'admin') { window.location.href = 'volunteer.html'; return null; }
     return user;
   },
   async signOut() {
-    if (supabaseClient) await supabaseClient.auth.signOut();
-    window.location.href = '/login.html';
+    try { await Api.post('/auth/logout'); } catch { /* Expired sessions are cleared locally. */ }
+    this.clearSession();
+    window.location.href = '../login.html';
   }
 };
 
@@ -64,7 +113,10 @@ const Toast = {
     const icons = { success: 'check-circle', error: 'alert-circle', info: 'info' };
     const t = document.createElement('div');
     t.className = `toast ${type}`;
-    t.innerHTML = `${Icons.render(icons[type], 'icon icon--md')}${message}`;
+    t.innerHTML = Icons.render(icons[type], 'icon icon--md');
+    const text = document.createElement('span');
+    text.textContent = message;
+    t.appendChild(text);
     this.container.appendChild(t);
     setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(40px)'; t.style.transition = '0.3s ease'; setTimeout(() => t.remove(), 300); }, duration);
   },
@@ -187,9 +239,9 @@ const Modal = {
   }
 };
 
-// ── Local Storage Fallback (demo mode) ────────
+// ── Browser-local data for non-API demo sections ─
 const DB = {
-  // Simulated DB for demo mode when Supabase not configured
+  // Static events, projects, and other sections not yet backed by API routes.
   _key: (table) => `bltf_${table}`,
   get(table) {
     try { return JSON.parse(localStorage.getItem(this._key(table))) || []; }

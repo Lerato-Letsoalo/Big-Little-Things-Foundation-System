@@ -224,7 +224,6 @@
   </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="public/js/icons.js"></script>
 <script src="public/js/config.js"></script>
 <script>
@@ -268,7 +267,7 @@ function signUpForEvent(id, title) {
   Toast.success(`You've signed up for "${title}"! Check your email for details.`);
 }
 
-function registerVolunteer() {
+async function registerVolunteer() {
   const first = document.getElementById('regFirst').value.trim();
   const last  = document.getElementById('regLast').value.trim();
   const email = document.getElementById('regEmail').value.trim();
@@ -285,26 +284,21 @@ function registerVolunteer() {
   if (pass.length < 8) { Toast.error('Password must be at least 8 characters.'); return; }
   if (!terms) { Toast.error('Please accept the Terms & Conditions.'); return; }
 
-  const volunteer = {
-    name: `${first} ${last}`,
-    email: normalizedEmail, phone, city,
-    skills: document.getElementById('regSkills').value,
-    password_hash: btoa(pass), // In prod: hashed via Supabase Auth
-    hours: 0, status: 'pending', role: 'volunteer'
-  };
-
-  // Check if email exists
-  const existing = DB.get('users').find(u => u.email?.toLowerCase() === normalizedEmail);
-  if (existing) { Toast.error('An account with this email already exists. Please log in.'); return; }
-
-  const user = DB.insert('users', { ...volunteer, role: 'volunteer' });
-  DB.insert('volunteers', { ...volunteer, user_id: user.id });
-
-  // Save session
-  localStorage.setItem('bltf_session', JSON.stringify({ id: user.id, name: volunteer.name, role: 'volunteer', email }));
-
-  Toast.success(`Welcome, ${first}! Your volunteer account is pending approval. Redirecting to your dashboard...`);
-  setTimeout(() => window.location.href = 'dashboard/volunteer.html', 2500);
+  try {
+    await Api.post('/auth/signup', {
+      name: `${first} ${last}`,
+      email: normalizedEmail,
+      password: pass,
+      phone,
+      city,
+      age_range: document.getElementById('regAge').value,
+      skills: document.getElementById('regSkills').value.trim()
+    });
+    Toast.success(`Thanks, ${first}. Your account is saved and awaits admin approval. You can sign in after approval.`);
+    setTimeout(() => window.location.href = 'login.html', 2500);
+  } catch (error) {
+    Toast.error(error.message);
+  }
 }
 </script>
 </body>
