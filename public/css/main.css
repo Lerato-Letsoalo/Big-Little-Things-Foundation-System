@@ -102,6 +102,8 @@ ul { list-style: none; }
   background: var(--white); color: var(--black); border-color: var(--white);
   transform: translateY(-2px);
 }
+.read-more-btn { color: var(--red); border-color: var(--red); }
+.read-more-btn:hover { background: var(--red); color: var(--white); border-color: var(--red); }
 .btn-outline-dark {
   background: transparent; color: var(--black); border-color: var(--black);
 }
@@ -196,6 +198,8 @@ ul { list-style: none; }
   transition: var(--transition);
 }
 .footer__social a:hover { background: var(--red); color: var(--white); }
+.footer__social .icon { display:flex; }
+.footer__social .icon svg { width: 18px; height: 18px; }
 .newsletter-form {
   display: flex; gap: 8px; margin-top: 16px;
 }

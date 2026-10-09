@@ -1,8 +1,9 @@
 // home.js — Homepage Dynamic Content
 
 document.addEventListener('DOMContentLoaded', () => {
-  renderDrives();
-  renderEvents();
+  if (document.getElementById('drivesGrid')) renderDrives();
+  if (document.getElementById('eventsGrid')) renderEvents();
+  if (document.getElementById('testimonialGrid')) initTestimonials();
   initHamburger();
 });
 
@@ -22,77 +23,72 @@ function initHamburger() {
 }
 
 function renderDrives() {
-  const projects = DB.get('projects');
   const grid = document.getElementById('drivesGrid');
   if (!grid) return;
-
-  const icons = { items: 'package', blankets: 'scarf', ZAR: 'banknote', default: 'target' };
-  const fmt_progress = (collected, goal, unit) => {
-    if (unit === 'ZAR') return { current: `R${Number(collected).toLocaleString()}`, goal: `R${Number(goal).toLocaleString()}` };
-    return { current: `${collected} ${unit}`, goal: `${goal} ${unit}` };
-  };
-
-  grid.innerHTML = projects.filter(p => p.status === 'active').map((p, i) => {
-    const pct = Math.min(Math.round((p.collected / p.goal) * 100), 100);
-    const { current, goal } = fmt_progress(p.collected, p.goal, p.unit);
-    const iconName = icons[p.unit] || icons.default;
-    return `
-    <div class="drive-card reveal" style="animation-delay:${i * 0.1}s">
+  grid.innerHTML = `
+    <article class="drive-card reveal">
       <div class="drive-card__header">
-        <div class="drive-card__icon">${Icons.render(iconName, 'icon')}</div>
-        <span class="badge badge-red">${pct}% Complete</span>
+        <div class="drive-card__icon">${Icons.render('graduation-cap', 'icon')}</div>
+        <span class="badge badge-red">Upcoming</span>
       </div>
-      <h3 class="drive-card__title">${p.name}</h3>
-      <p class="drive-card__location icon-text">${Icons.render('map-pin', 'icon icon--inline')}${p.location}</p>
-      <p style="font-size:0.875rem;color:var(--gray-700);margin-bottom:16px;line-height:1.6">${p.description}</p>
-      <div class="progress-wrap">
-        <div class="progress-info">
-          <span>${current} collected</span>
-          <span>Goal: ${goal}</span>
-        </div>
-        <div class="progress-bar">
-          <div class="progress-fill" data-width="${pct}" style="width:0"></div>
-        </div>
-      </div>
-      <a href="donate.html" class="btn btn-primary btn-sm" style="margin-top:20px;width:100%;justify-content:center">Donate to This Drive</a>
-    </div>`;
-  }).join('');
-
-  setTimeout(() => {
-    grid.querySelectorAll('.progress-fill[data-width]').forEach(bar => {
-      setTimeout(() => { bar.style.width = bar.dataset.width + '%'; }, 300);
-    });
-  }, 100);
+      <h3 class="drive-card__title">Upcoming Year-End Stationery Drive</h3>
+      <p style="font-size:0.875rem;color:var(--gray-700);line-height:1.6">Help us prepare learners for the academic year ahead by contributing essential stationery and school supplies. Your support will help equip young people with the resources they need to learn, grow and succeed.</p>
+      <div class="drive-card__details"><strong>Status:</strong> Upcoming<br><strong>Dates:</strong> To be announced</div>
+    </article>`;
 }
 
 function renderEvents() {
-  const events = DB.get('events');
   const grid = document.getElementById('eventsGrid');
   if (!grid) return;
-
-  grid.innerHTML = events.slice(0,3).map((ev, i) => {
-    const d = new Date(ev.date);
-    const day = d.getDate();
-    const month = d.toLocaleString('en-ZA', { month: 'short' }).toUpperCase();
-    const spotsLeft = ev.slots - ev.filled;
-    return `
-    <div class="event-card reveal" style="animation-delay:${i * 0.12}s">
-      <div class="event-card__date">
-        <div class="event-card__day">${day}</div>
-        <div class="event-card__month">${month}</div>
-      </div>
+  const events = [
+    { title: '2027 Easter Drive', description: 'Join us as we prepare for our Easter outreach initiative, bringing care and support to communities in need.', status: 'Planned for 2027' },
+    { title: '2027 Spring Drive', description: 'Be part of our planned spring initiative as we continue working towards positive change through community support and collective action.', status: 'Planned for 2027' }
+  ];
+  grid.innerHTML = events.map((event, index) => `
+    <article class="event-card reveal" style="animation-delay:${index * 0.12}s">
+      <div class="event-card__date"><div class="event-card__day">2027</div><div class="event-card__month">PLANNED</div></div>
       <div class="event-card__body">
-        <h3 class="event-card__title">${ev.title}</h3>
-        <div class="event-card__meta">
-          <span class="icon-text">${Icons.render('map-pin', 'icon icon--inline')}${ev.location}</span>
-          <span class="icon-text">${Icons.render('clock', 'icon icon--inline')}Registration open</span>
-        </div>
-        <p class="event-card__desc">${ev.description}</p>
-        <div class="event-card__slots">${spotsLeft} spots remaining of ${ev.slots}</div>
-        <a href="volunteer.html#events" class="btn btn-primary btn-sm" style="width:100%;justify-content:center">Sign Up</a>
+        <h3 class="event-card__title">${event.title}</h3>
+        <p class="event-card__desc">${event.description}</p>
+        <div class="event-card__slots"><strong>Date:</strong> To be confirmed<br><strong>Status:</strong> ${event.status}</div>
       </div>
-    </div>`;
-  }).join('');
+    </article>`).join('');
+}
+
+const testimonials = [
+  { quote: 'Volunteering with the children was such a heartwarming and rewarding experience. Seeing their smiles, energy, and excitement made every moment special. I loved interacting with them, learning from them, and creating happy memories together. It reminded me how meaningful it is to make a difference in a child’s life, even through the smallest acts of kindness.', name: 'Larissa', drive: 'Spring Drive 2026' },
+  { quote: 'The Spring Drive 2026 reminded me that making a difference is about more than what we give; it is also about the time, care and presence we offer. Spending time with the children, playing games and sharing laughter made the experience especially meaningful to me.', name: 'Lerato Letsoalo', drive: 'Spring Drive 2026' },
+  { quote: 'What stood out to me most was the joy of connecting with the children. Playing games, laughing together and seeing their excitement made the day memorable. It reminded me that even a few hours spent with someone can create moments that truly matter.', name: 'Unathi Masemola', drive: 'Spring Drive 2026' },
+  { quote: 'Being part of the Spring Drive 2026 was a valuable reminder of what can be achieved when people come together with a shared purpose. It was rewarding to contribute to an initiative centred on community, compassion and making a positive difference.', name: 'Tebogo Mosoma', drive: 'Spring Drive 2026' },
+  { quote: 'The experience showed me that meaningful change starts with a willingness to show up and be part of something bigger than yourself. I appreciated being part of a team committed to creating positive experiences and bringing people together through the work of the foundation.', name: 'Benjamin Mulamba', drive: 'Spring Drive 2026' },
+  { quote: 'Volunteering with the Big Little Things Foundation during my year abroad in Cape Town was an incredibly wholesome and rewarding experience. From donating clothes and food to spending a fun-filled day playing games and connecting with the children, every moment was special. It was a beautiful reminder of how much joy and connection can come from simply showing up and spending time together.', name: 'Liza', drive: 'Easter and Spring Drive 2025' }
+];
+
+function renderTestimonials(startIndex = 0) {
+  const grid = document.getElementById('testimonialGrid');
+  if (!grid) return;
+  const visible = Array.from({ length: 3 }, (_, index) => testimonials[(startIndex + index) % testimonials.length]);
+  grid.innerHTML = visible.map(item => `
+    <article class="testimonial-card">
+      <p class="testimonial-quote">“${item.quote}”</p>
+      <div class="testimonial-author">${item.name}</div>
+      <div class="testimonial-drive">${item.drive}</div>
+    </article>`).join('');
+  document.getElementById('testimonialPage').textContent = `${Math.floor(startIndex / 3) + 1} / 2`;
+}
+
+function initTestimonials() {
+  let startIndex = 0;
+  const showPage = direction => {
+    startIndex = (startIndex + direction * 3 + testimonials.length) % testimonials.length;
+    renderTestimonials(startIndex);
+  };
+  document.getElementById('testimonialPrevious')?.addEventListener('click', () => showPage(-1));
+  document.getElementById('testimonialNext')?.addEventListener('click', () => showPage(1));
+  renderTestimonials(startIndex);
+  window.setInterval(() => {
+    if (!document.hidden) showPage(1);
+  }, 8000);
 }
 
 function subscribeNewsletter() {

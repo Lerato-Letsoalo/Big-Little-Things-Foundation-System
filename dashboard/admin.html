@@ -166,7 +166,7 @@
         </div>
         <div class="data-table-wrap">
           <table class="data-table">
-            <thead><tr><th>Donor</th><th>Type</th><th>Amount/Item</th><th>City</th><th>Date</th><th>Message</th></tr></thead>
+            <thead><tr><th>Donor</th><th>Type</th><th>Amount/Item</th><th>City</th><th>Date</th><th>Message</th><th>Attachment</th></tr></thead>
             <tbody id="donationsTable"></tbody>
           </table>
         </div>
@@ -202,6 +202,11 @@
             <div style="margin-bottom:16px"><span class="icon icon--xl" data-icon="camera"></span></div>
             <h3 style="margin-bottom:8px">Upload Photos</h3>
             <p style="color:var(--gray-700);margin-bottom:20px">Drag and drop images or choose files from this device. JPG, PNG, WebP, and GIF up to 5MB each.</p>
+            <div class="form-row" style="max-width:760px;margin:0 auto 16px;text-align:left">
+              <div class="form-group"><label class="form-label" for="galleryEvent">Event / Drive *</label><input class="form-control" id="galleryEvent" type="text" placeholder="Winter Clothing Drive" required></div>
+              <div class="form-group"><label class="form-label" for="galleryLocation">Location *</label><input class="form-control" id="galleryLocation" type="text" placeholder="Johannesburg" required></div>
+              <div class="form-group"><label class="form-label" for="galleryDate">Date *</label><input class="form-control" id="galleryDate" type="date" required></div>
+            </div>
             <input type="file" id="galleryFileInput" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden>
             <button class="btn btn-primary" onclick="document.getElementById('galleryFileInput').click()">Select Photos</button>
             <p id="galleryUploadStatus" style="font-size:0.8rem;color:var(--gray-400);margin-top:12px" aria-live="polite"></p>
@@ -294,7 +299,11 @@
     </div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Start Date</label><input type="date" class="form-control" id="prjStart"></div>
+      <div class="form-group"><label class="form-label">End Date *</label><input type="date" class="form-control" id="prjEnd" required></div>
+    </div>
+    <div class="form-row">
       <div class="form-group"><label class="form-label">Location</label><input type="text" class="form-control" id="prjLocation" placeholder="Gauteng"></div>
+      <div class="form-group"><label class="form-label">Status</label><input type="text" class="form-control" value="Automatically calculated" disabled></div>
     </div>
     <div class="form-group"><label class="form-label">Description</label><textarea class="form-control" id="prjDesc" rows="3"></textarea></div>
     <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px">
@@ -362,7 +371,7 @@ function loadOverview() {
 
   document.getElementById('statVols').textContent = volunteers.length;
   document.getElementById('statDons').textContent = 'R' + moneyDons.toLocaleString();
-  document.getElementById('statProjs').textContent = projects.filter(p => p.status === 'active').length;
+  document.getElementById('statProjs').textContent = getProjectsByStatus('active').length;
   document.getElementById('statEvts').textContent = events.length;
 
   // Pending hours
@@ -413,7 +422,7 @@ function loadOverview() {
       <tr>
         <td><strong>${d.donor_name}</strong></td>
         <td><span class="badge badge-${d.type==='money'?'green':'blue'}">${d.type}</span></td>
-        <td>${d.type==='money'?'R'+d.amount:d.item_description||'—'}</td>
+        <td>${d.payment_status === 'awaiting_transfer' ? 'Awaiting bank transfer' : d.type==='money'?'R'+d.amount:d.item_description||'—'}</td>
         <td>${fmt.dateShort(d.date||d.created_at)}</td>
       </tr>`).join('') || `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--gray-400)">No donations yet.</td></tr>`;
   }
@@ -421,7 +430,7 @@ function loadOverview() {
   // Project progress
   const pp = document.getElementById('projectProgress');
   if (pp) {
-    pp.innerHTML = projects.filter(p=>p.status==='active').map(p => {
+    pp.innerHTML = getProjectsByStatus('active').map(p => {
       const pct = Math.min(Math.round((p.collected/p.goal)*100),100);
       return `<div>
         <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:600;margin-bottom:6px">
@@ -504,11 +513,12 @@ function renderDonations() {
     <tr>
       <td><strong>${d.donor_name}</strong>${d.anonymous?'<br><span style="font-size:0.75rem;color:var(--gray-400)">Anonymous</span>':''}</td>
       <td><span class="badge badge-${d.type==='money'?'green':d.type==='food'?'orange':'blue'}">${d.type}</span></td>
-      <td>${d.type==='money'?'<strong>R'+d.amount+'</strong>':(d.item_description||'—')}</td>
+      <td>${d.payment_status === 'awaiting_transfer' ? 'Awaiting bank transfer' : d.type==='money'?'<strong>R'+d.amount+'</strong>':(d.item_description||'—')}</td>
       <td>${d.city||'—'}</td>
       <td>${fmt.dateShort(d.date||d.created_at)}</td>
       <td style="max-width:180px;font-size:0.82rem;color:var(--gray-700)">${d.message||'—'}</td>
-    </tr>`).join('') || `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--gray-400)">No donations yet.</td></tr>`;
+      <td>${d.proof_image ? `<a href="${d.proof_image}" target="_blank" rel="noopener">View image</a>` : '—'}</td>
+    </tr>`).join('') || `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--gray-400)">No donations yet.</td></tr>`;
 }
 
 function renderEvents() {
@@ -542,11 +552,12 @@ function renderProjects() {
   const grid = document.getElementById('projectsAdminGrid');
   if (!grid) return;
   grid.innerHTML = projects.map(p => {
+    const status = projectStatus(p);
     const pct = Math.min(Math.round((p.collected/p.goal)*100),100);
     return `<div style="background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow-sm)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
         <h4 style="font-size:1rem">${p.name}</h4>
-        <span class="badge badge-${p.status==='active'?'green':'gray'}">${p.status}</span>
+        <span class="badge badge-${status==='active'?'green':'gray'}">${status}</span>
       </div>
       <p style="font-size:0.82rem;color:var(--gray-700);margin-bottom:14px">${p.description}</p>
       <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
@@ -580,7 +591,7 @@ function renderReports() {
         ['Total Money Donations', 'R'+moneyTotal.toLocaleString()],
         ['Total Item Donations', dons.filter(d=>d.type!=='money').length],
         ['Total Unique Donors', new Set(dons.map(d=>d.donor_name)).size],
-        ['Active Projects', DB.get('projects').filter(p=>p.status==='active').length],
+        ['Active Projects', getProjectsByStatus('active').length],
         ['Upcoming Events', DB.get('events').length],
       ].map(([label, val]) => `
         <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--gray-200);font-size:0.9rem">
@@ -598,7 +609,9 @@ function renderGalleryUploads() {
     <div style="background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);overflow:hidden">
       <img src="${image.url}" alt="${image.caption}" style="width:100%;height:140px;object-fit:cover">
       <div style="padding:10px;font-size:0.8rem">
-        <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${image.caption}</div>
+        <div style="font-weight:600">${image.event || image.caption}</div>
+        <div style="color:var(--gray-700);margin-top:4px">${image.location || ''}</div>
+        <div style="color:var(--gray-400);margin-top:2px">${image.date ? fmt.dateShort(image.date) : ''}</div>
         <button class="btn btn-danger btn-sm" style="margin-top:8px" onclick="deleteGalleryUpload('${image.id}')">Remove</button>
       </div>
     </div>`).join('') : '<p style="color:var(--gray-400);font-size:0.875rem">No uploaded photos yet.</p>';
@@ -613,9 +626,17 @@ function deleteGalleryUpload(id) {
 
 function uploadGalleryFiles(files) {
   const status = document.getElementById('galleryUploadStatus');
+  const eventName = document.getElementById('galleryEvent').value.trim();
+  const location = document.getElementById('galleryLocation').value.trim();
+  const eventDate = document.getElementById('galleryDate').value;
   const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
   const fileList = Array.from(files || []);
   if (!fileList.length) return;
+  if (!eventName || !location || !eventDate) {
+    status.textContent = 'Enter the event or drive, location, and date before uploading.';
+    Toast.error('Complete all event details before uploading photos.');
+    return;
+  }
   let completed = 0;
   let added = 0;
   fileList.forEach(file => {
@@ -624,7 +645,7 @@ function uploadGalleryFiles(files) {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        DB.insert('gallery_uploads', { url: reader.result, caption: file.name.replace(/\.[^.]+$/, ''), event: 'Uploaded Photos', date: new Date().toISOString(), category: 'uploads' });
+        DB.insert('gallery_uploads', { url: reader.result, caption: file.name.replace(/\.[^.]+$/, ''), event: eventName, location, date: eventDate, category: 'uploads' });
         added++;
       } catch (error) {
         Toast.error('Upload could not be saved. This device may be out of local storage.');
@@ -698,8 +719,17 @@ function deleteEvent(id) {
 function createProject() {
   const name = document.getElementById('prjName').value.trim();
   const goal = parseInt(document.getElementById('prjGoal').value, 10);
+  const endDate = document.getElementById('prjEnd').value;
   if (!name || !Number.isInteger(goal) || goal < 1) { Toast.error('Enter a project name and a positive goal.'); return; }
-  DB.insert('projects', { name, goal, collected: 0, unit: document.getElementById('prjUnit').value, location: document.getElementById('prjLocation').value, description: document.getElementById('prjDesc').value, status: 'active' });
+  if (!endDate) { Toast.error('Enter a project end date.'); return; }
+  DB.insert('projects', {
+    name, goal, collected: 0, unit: document.getElementById('prjUnit').value,
+    start_date: document.getElementById('prjStart').value,
+    end_date: endDate,
+    location: document.getElementById('prjLocation').value,
+    description: document.getElementById('prjDesc').value,
+    status: 'active'
+  });
   Toast.success('Project created!'); Modal.close('addProjectModal'); renderProjects(); loadOverview();
 }
 function updateProjectProgress(id) {

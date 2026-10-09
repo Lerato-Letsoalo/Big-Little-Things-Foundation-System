@@ -10,7 +10,7 @@
 }
 .hero__bg {
   position: absolute; inset: 0;
-  background: url('../images/gallery/first-sanitary-pad-drive/pad-drive-02.jpeg') center/cover no-repeat;
+  background: url('../images/gallery/Winter Clothing Donation Drive_2025/Image 02.jpeg') center/cover no-repeat;
 }
 .hero__overlay {
   position: absolute; inset: 0;
@@ -148,6 +148,7 @@
 }
 .drive-card__title { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; color: var(--black); margin-bottom: 8px; }
 .drive-card__location { font-size: 0.82rem; color: var(--gray-400); margin-bottom: 16px; }
+.drive-card__details { margin-top:18px; padding-top:14px; border-top:1px solid var(--gray-200); color:var(--gray-700); font-size:0.85rem; line-height:1.8; }
 
 /* ── EVENTS ── */
 .events-grid {
@@ -188,6 +189,7 @@
 }
 .team-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-6px); }
 .team-card__img { height: 260px; }
+img.team-card__img { display:block; width:100%; object-fit:cover; object-position:center 35%; }
 .team-card__img--icon {
   display: flex; align-items: center; justify-content: center;
   background: var(--gray-100); color: var(--red);
@@ -204,7 +206,18 @@
   font-size: 0.75rem; font-weight: 700; color: var(--gray-700);
   transition: var(--transition);
 }
+.team-social-btn--phone { width: auto; min-width: max-content; padding: 0 12px; border-radius: 999px; white-space: nowrap; }
 .team-social-btn:hover { background: var(--red); color: var(--white); }
+
+/* ── TESTIMONIALS ── */
+.testimonials-section { background: var(--warm-white); }
+.testimonial-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; margin-top:40px; }
+.testimonial-card { display:flex; flex-direction:column; min-width:0; padding:24px; background:var(--white); border-top:3px solid var(--red); box-shadow:var(--shadow-sm); }
+.testimonial-quote { flex:1; color:var(--gray-700); font-size:0.9rem; line-height:1.7; }
+.testimonial-author { margin-top:20px; font-weight:700; color:var(--black); }
+.testimonial-drive { margin-top:4px; color:var(--gray-400); font-size:0.8rem; }
+.testimonial-controls { display:flex; justify-content:center; align-items:center; gap:18px; margin-top:28px; }
+.testimonial-controls span { min-width:42px; text-align:center; font-size:0.85rem; color:var(--gray-700); }
 
 /* ── GALLERY MOSAIC ── */
 .gallery-mosaic {
@@ -259,6 +272,7 @@
   .hero__badge { display: none; }
   .hero__actions { justify-content: center; }
   .team-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
+  .testimonial-grid { grid-template-columns:1fr; }
   .drives-grid, .events-grid { grid-template-columns: 1fr; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .gallery-mosaic { grid-template-columns: 1fr 1fr; }

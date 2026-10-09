@@ -220,6 +220,16 @@ const DB = {
   }
 };
 
+function projectStatus(project) {
+  if (!project?.end_date) return project?.status || 'past';
+  const end = new Date(`${project.end_date}T23:59:59`);
+  return end >= new Date() ? 'active' : 'past';
+}
+
+function getProjectsByStatus(status) {
+  return DB.get('projects').filter(project => projectStatus(project) === status);
+}
+
 // Seed demo data if empty
 function seedDemoData() {
   if (DB.get('events').length === 0) {
@@ -228,9 +238,9 @@ function seedDemoData() {
     DB.insert('events', { title: 'Youth Skills Workshop', date: '2025-08-05', location: 'Soweto', slots: 40, filled: 22, description: 'Empowering local youth with digital and entrepreneurship skills.' });
   }
   if (DB.get('projects').length === 0) {
-    DB.insert('projects', { name: 'School Supplies Drive 2025', goal: 500, collected: 320, unit: 'items', description: 'Collecting school supplies for learners in underfunded schools across Gauteng.', status: 'active', location: 'Gauteng' });
-    DB.insert('projects', { name: 'Winter Blanket Drive', goal: 200, collected: 180, unit: 'blankets', description: 'Providing warm blankets to homeless individuals and families.', status: 'active', location: 'Johannesburg' });
-    DB.insert('projects', { name: 'Food Parcel Programme', goal: 100000, collected: 67500, unit: 'ZAR', description: 'Monthly food parcels for vulnerable families.', status: 'active', location: 'Pretoria' });
+    DB.insert('projects', { name: 'School Supplies Drive 2025', goal: 500, collected: 320, unit: 'items', description: 'Collecting school supplies for learners in underfunded schools across Gauteng.', status: 'active', start_date: '2025-01-01', end_date: '2026-12-31', location: 'Gauteng' });
+    DB.insert('projects', { name: 'Winter Blanket Drive', goal: 200, collected: 180, unit: 'blankets', description: 'Providing warm blankets to homeless individuals and families.', status: 'active', start_date: '2025-06-01', end_date: '2026-12-31', location: 'Johannesburg' });
+    DB.insert('projects', { name: 'Food Parcel Programme', goal: 100000, collected: 67500, unit: 'ZAR', description: 'Monthly food parcels for vulnerable families.', status: 'active', start_date: '2025-01-01', end_date: '2026-12-31', location: 'Pretoria' });
   }
   if (DB.get('donations').length === 0) {
     ['Sipho M.','Aisha K.','Thabo N.','Lindiwe D.','Ravi P.'].forEach((name, i) => {

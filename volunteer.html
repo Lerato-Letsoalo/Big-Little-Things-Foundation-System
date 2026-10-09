@@ -4,10 +4,11 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Volunteer — Big Little Things Foundation</title>
   <link rel="stylesheet" href="public/css/main.css">
+  <link rel="stylesheet" href="public/css/home.css">
   <style>
     body { padding-top: var(--nav-h); }
     .vol-hero { background: var(--black); padding: 80px 0; position: relative; overflow: hidden; }
-    .vol-hero::before { content:''; position:absolute; inset:0; background:url('public/images/gallery/second-drive-2022/drive2-10.jpeg') center/cover; opacity:0.25; }
+    .vol-hero::before { content:''; position:absolute; inset:0; background:url("public/images/gallery/Community Outreach Collaboration with AWCA_2024/Image 01.jpeg") center/cover; opacity:0.25; }
     .vol-hero .container { position: relative; z-index: 1; }
     .vol-hero h1 { color: var(--white); }
     .vol-hero p { color: rgba(255,255,255,0.65); max-width: 520px; margin-top: 16px; }
@@ -18,7 +19,7 @@
     .why-card__icon { font-size: 2.4rem; margin-bottom: 16px; }
     .why-card h3 { margin-bottom: 12px; }
     .events-list { padding: 80px 0; background: var(--gray-100); }
-    .events-list-grid { display: grid; gap: 20px; margin-top: 48px; }
+    .events-list-grid { margin-top: 48px; }
     .event-row { background: var(--white); border-radius: var(--radius-lg); padding: 24px 28px; display: flex; align-items: center; gap: 24px; box-shadow: var(--shadow-sm); transition: var(--transition); }
     .event-row:hover { box-shadow: var(--shadow-md); transform: translateX(4px); }
     .event-row__date { background: var(--red); color: var(--white); border-radius: var(--radius); padding: 12px 16px; text-align: center; flex-shrink: 0; min-width: 64px; }
@@ -38,6 +39,10 @@
     .testimonial-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--red); color: var(--white); display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
     .testimonial-name { font-weight: 600; color: var(--black); font-size: 0.9rem; }
     .testimonial-role { font-size: 0.8rem; color: var(--gray-400); margin-top: 2px; }
+    .testimonials-grid .testimonial-author { display:block; margin-top:20px; }
+    .testimonials-grid .testimonial-drive { margin-top:4px; }
+    .testimonial-controls { display:flex; justify-content:center; align-items:center; gap:18px; margin-top:28px; }
+    .testimonial-controls span { min-width:42px; text-align:center; font-size:0.85rem; color:var(--gray-700); }
     .reg-section { padding: 80px 0; background: var(--black); }
     .reg-section h2 { color: var(--white); }
     .reg-form-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-lg); padding: 48px; max-width: 700px; margin: 48px auto 0; }
@@ -126,7 +131,7 @@
       <span class="section-label">Upcoming Events</span>
       <h2 class="section-heading">Where We Need You</h2>
     </div>
-    <div class="events-list-grid" id="eventsListGrid"></div>
+    <div class="events-grid events-list-grid" id="eventsGrid"></div>
   </div>
 </section>
 
@@ -137,19 +142,11 @@
       <span class="section-label" style="justify-content:center">Volunteer Stories</span>
       <h2 class="section-heading">Hear From Our Volunteers</h2>
     </div>
-    <div class="testimonials-grid">
-      <div class="testimonial-card reveal">
-        <p class="testimonial-text">Volunteering with Big Little Things completely changed my perspective. I've made lifelong friends and grown more than I ever expected. The impact is real and visible.</p>
-        <div class="testimonial-author"><div class="testimonial-avatar">KM</div><div><div class="testimonial-name">Kagiso Mokoena</div><div class="testimonial-role">Volunteer since 2023 · 45 hours</div></div></div>
-      </div>
-      <div class="testimonial-card reveal delay-1">
-        <p class="testimonial-text">The team is so welcoming. I joined knowing nothing about NPO work, and within weeks I was leading distributions. The certificate I earned helped me get my first job!</p>
-        <div class="testimonial-author"><div class="testimonial-avatar">TN</div><div><div class="testimonial-name">Thandi Nxumalo</div><div class="testimonial-role">Volunteer since 2022 · 120 hours</div></div></div>
-      </div>
-      <div class="testimonial-card reveal delay-2">
-        <p class="testimonial-text">I drive 40 minutes to every event because the community we serve reminds me why I do this. Seeing the smiles on children's faces is worth every second.</p>
-        <div class="testimonial-author"><div class="testimonial-avatar">RS</div><div><div class="testimonial-name">Relebogile Sithole</div><div class="testimonial-role">Volunteer since 2024 · 28 hours</div></div></div>
-      </div>
+    <div class="testimonials-grid testimonial-grid" id="testimonialGrid" aria-live="polite"></div>
+    <div class="testimonial-controls">
+      <button type="button" class="btn btn-outline-dark btn-sm" id="testimonialPrevious" aria-label="Previous testimonials">Previous</button>
+      <span id="testimonialPage" aria-live="polite">1 / 2</span>
+      <button type="button" class="btn btn-outline-dark btn-sm" id="testimonialNext" aria-label="Next testimonials">Next</button>
     </div>
   </div>
 </section>
@@ -219,7 +216,7 @@
 
 <footer class="footer">
   <div class="container">
-    <div class="footer__grid"><div class="footer__brand"><a href="index.html" class="nav__logo"><img src="public/images/logo.png" alt="Big Little Things Foundation" class="nav__logo-img"></a><p>Empowering communities through youth-driven initiatives across South Africa.</p><div class="footer__social" style="margin-top:20px"><a href="https://www.instagram.com/biglittlethings.foundation?igsi=MTYyMGE0NzBtMTRicQ==" title="Instagram" target="_blank" rel="noopener">ig</a><a href="https://www.tiktok.com/@bltfoundation?_r=1&amp;_t=ZS-999eoTVYr5z" title="TikTok" target="_blank" rel="noopener">tk</a><a href="#" title="LinkedIn">in</a></div></div><div class="footer__col"><h4>Quick Links</h4><ul><li><a href="index.html">Home</a></li><li><a href="about.html">About Us</a></li><li><a href="projects.html">Projects</a></li><li><a href="gallery.html">Gallery</a></li></ul></div><div class="footer__col"><h4>Get Involved</h4><ul><li><a href="volunteer.html">Volunteer</a></li><li><a href="donate.html">Donate</a></li><li><a href="contact.html">Contact</a></li></ul></div><div class="footer__col"><h4>Contact</h4><ul><li><a href="tel:0810130522">Hloni: 081 013 0522</a></li><li><a href="tel:0725169605">Iman: 072 516 9605</a></li><li><a href="tel:0781626965">Chloe: 078 162 6965</a></li><li>South Africa</li></ul></div></div>
+    <div class="footer__grid"><div class="footer__brand"><a href="index.html" class="nav__logo"><img src="public/images/logo.png" alt="Big Little Things Foundation" class="nav__logo-img"></a><p>Empowering communities through youth-driven initiatives across South Africa.</p><div class="footer__social" style="margin-top:20px"><a href="https://www.instagram.com/biglittlethings.foundation?igsi=MTYyMGE0NzBtMTRicQ==" title="Instagram" target="_blank" rel="noopener" aria-label="Instagram"><span class="icon" data-icon="instagram" aria-hidden="true"></span></a><a href="https://www.tiktok.com/@bltfoundation?_r=1&amp;_t=ZS-999eoTVYr5z" title="TikTok" target="_blank" rel="noopener" aria-label="TikTok"><span class="icon" data-icon="tiktok" aria-hidden="true"></span></a><a href="http://www.linkedin.com/in/big-little-things-foundation-ab38b5441" title="LinkedIn" target="_blank" rel="noopener" aria-label="LinkedIn"><span class="icon" data-icon="linkedin" aria-hidden="true"></span></a></div></div><div class="footer__col"><h4>Quick Links</h4><ul><li><a href="index.html">Home</a></li><li><a href="about.html">About Us</a></li><li><a href="projects.html">Projects</a></li><li><a href="gallery.html">Gallery</a></li></ul></div><div class="footer__col"><h4>Get Involved</h4><ul><li><a href="volunteer.html">Volunteer</a></li><li><a href="donate.html">Donate</a></li><li><a href="contact.html">Contact</a></li></ul></div><div class="footer__col"><h4>Contact</h4><ul><li><a href="tel:0810130522">Hloni: 081 013 0522</a></li><li><a href="tel:0725169605">Iman: 072 516 9605</a></li><li><a href="tel:0781626965">Chloe: 078 162 6965</a></li><li>South Africa</li></ul></div></div>
     <div class="footer__bottom"><p>© 2025 Big Little Things Foundation. NPO Reg: 000/000/NPO</p></div>
   </div>
 </footer>
@@ -227,37 +224,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="public/js/icons.js"></script>
 <script src="public/js/config.js"></script>
+<script src="public/js/home.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', renderEventsList);
-
-function renderEventsList() {
-  const events = DB.get('events');
-  const grid = document.getElementById('eventsListGrid');
-  if (!grid) return;
-  grid.innerHTML = events.map((ev, i) => {
-    const d = new Date(ev.date);
-    const spotsLeft = ev.slots - ev.filled;
-    return `<div class="event-row reveal" style="animation-delay:${i*0.08}s">
-      <div class="event-row__date">
-        <div class="event-row__day">${d.getDate()}</div>
-        <div class="event-row__month">${d.toLocaleString('en',{month:'short'})}</div>
-      </div>
-      <div class="event-row__content">
-        <div class="event-row__title">${ev.title}</div>
-        <div class="event-row__meta">
-          <span class="icon-text">${Icons.render('map-pin', 'icon icon--inline')}${ev.location}</span>
-          <span class="icon-text">${Icons.render('users', 'icon icon--inline')}${spotsLeft} spots left</span>
-          <span class="icon-text">${Icons.render('calendar', 'icon icon--inline')}${d.toLocaleDateString('en-ZA')}</span>
-        </div>
-        <p style="font-size:0.875rem;color:var(--gray-700);margin-top:8px">${ev.description}</p>
-      </div>
-      <div class="event-row__actions">
-        <button class="btn btn-primary btn-sm" onclick="signUpForEvent('${ev.id}','${ev.title}')">Sign Up</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
 function signUpForEvent(id, title) {
   const user = JSON.parse(localStorage.getItem('bltf_session') || 'null');
   if (!user) {

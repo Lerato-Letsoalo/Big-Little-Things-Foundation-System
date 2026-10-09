@@ -8,7 +8,7 @@
   <style>
     body { padding-top: var(--nav-h); }
     .about-hero { background: var(--black); padding: 100px 0 80px; position: relative; overflow: hidden; }
-    .about-hero::before { content:''; position:absolute; inset:0; background:url('public/images/gallery/second-drive-2022/drive2-01.jpeg') center/cover; opacity:0.18; }
+    .about-hero::before { content:''; position:absolute; inset:0; background:url("public/images/gallery/Community Outreach Collaboration with AWCA_2024/Image 01.jpeg") center/cover; opacity:0.18; }
     .about-hero::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg,rgba(13,13,13,0.95) 40%,rgba(13,13,13,0.4)); }
     .about-hero .container { position:relative;z-index:1; }
     .about-hero h1 { color:var(--white); max-width:600px; }
@@ -61,13 +61,16 @@
     .team-card { background:var(--white); border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow-sm); transition:var(--transition); }
     .team-card:hover { box-shadow:var(--shadow-lg); transform:translateY(-6px); }
     .team-card__img { height:280px; position:relative; }
+    img.team-card__img { display:block; width:100%; object-fit:cover; object-position:center 35%; }
     .team-card__img--icon { display:flex; align-items:center; justify-content:center; background:var(--gray-100); color:var(--red); }
     .team-card__img--icon .icon svg { width:72px; height:72px; stroke-width:1.5; }
     .team-card__body { padding:28px; }
     .team-card__name { font-family:var(--font-display); font-size:1.25rem; font-weight:700; color:var(--black); }
     .team-card__role { font-size:0.82rem; color:var(--red); font-weight:700; letter-spacing:0.06em; text-transform:uppercase; margin:6px 0 14px; }
-    .team-card__bio { font-size:0.875rem; color:var(--gray-700); line-height:1.7; }
+    .team-card__bio { font-size:0.875rem; color:var(--gray-700); line-height:1.7; margin-bottom:14px; }
     .team-card__social { display:flex; gap:8px; margin-top:18px; }
+    .read-more-btn { color:var(--red); border-color:var(--red); }
+    .read-more-btn:hover { background:var(--red); color:var(--white); border-color:var(--red); }
     .social-chip { padding:5px 14px; border-radius:99px; border:1px solid var(--gray-200); font-size:0.78rem; font-weight:600; color:var(--gray-700); background:var(--gray-100); transition:var(--transition); }
     .social-chip:hover { background:var(--red); color:var(--white); border-color:var(--red); }
 
@@ -148,8 +151,8 @@
       </div>
       <div class="story-visual reveal delay-2">
         <div class="story-img-stack">
-          <div class="story-img story-img-1" style="background:url('public/images/gallery/first-sanitary-pad-drive/pad-drive-01.jpeg') center/cover"></div>
-          <div class="story-img story-img-2" style="background:url('public/images/gallery/second-drive-2022/drive2-05.jpeg') center/cover"></div>
+          <div class="story-img story-img-1" style='background:url("public/images/gallery/Sanitary Pad Donation Drive_2021/Image 01.jpeg") center/cover'></div>
+          <div class="story-img story-img-2" style='background:url("public/images/gallery/Christmas Lunch Pack Distribution_2022/Image 01.jpeg") center/cover'></div>
           <div class="story-badge">
             <div class="story-badge-num">3×</div>
             <div class="story-badge-text">First Drive Target Exceeded</div>
@@ -234,54 +237,41 @@
     </div>
     <div class="team-grid">
       <div class="team-card reveal">
-        <div class="team-card__img team-card__img--icon"><span class="icon icon--xl" data-icon="user"></span></div>
+        <img class="team-card__img" src="public/images/team/Iman Cassiem.jpeg" alt="Iman Cassiem">
         <div class="team-card__body">
           <div class="team-card__name">Iman Cassiem</div>
-          <div class="team-card__role">Co-Founder</div>
-          <p class="team-card__bio">Iman co-founded Big Little Things Foundation in 2021, helping launch the first sanitary pad drive that exceeded expectations threefold and sparked a broader vision for community impact across South Africa.</p>
+          <div class="team-card__role">Treasurer &amp; Volunteer Coordinator</div>
+          <p class="team-card__bio" data-bio-full="Iman Cassiem is a passionate community advocate who believes that meaningful change often starts with the little things we do for others. As the Treasurer &amp; Volunteer Coordinator at Big Little Things Foundation, she helps oversee the organisation’s finances, coordinate volunteers and ensure that Big Little Things’ initiatives are organised, impactful and sustainable. With a background in Accounting Science and a strong interest in leadership, community development and youth empowerment, Iman brings her practical skills and dedication into ensuring that Big Little Things is run ethically and functions efficiently. She is passionate about creating opportunities for people to get involved, supporting communities in need and inspiring others to recognise that even the smallest contribution can make a lasting difference.">Iman Cassiem is a passionate community advocate who believes that meaningful change often starts with the little things we do for others. As the Treasurer &amp; Volunteer Coordinator at Big Little Things Foundation, she helps oversee the organisation’s finances, coordinate volunteers and ensure that Big Little Things’ initiatives are organised, impactful and sustainable. With a background in Accounting Science and a strong interest in leadership, community development and youth empowerment, Iman brings her practical skills and dedication into ensuring that Big Little Things is run ethically and functions efficiently. She is passionate about creating opportunities for people to get involved, supporting communities in need and inspiring others to recognise that even the smallest contribution can make a lasting difference.</p>
+          <button class="btn btn-outline btn-sm read-more-btn" type="button" aria-expanded="false">Read more</button>
           <div class="team-card__social">
             <a href="tel:0725169605" class="social-chip">072 516 9605</a>
           </div>
         </div>
       </div>
       <div class="team-card reveal delay-1">
-        <div class="team-card__img team-card__img--icon"><span class="icon icon--xl" data-icon="user"></span></div>
+        <img class="team-card__img" src="public/images/team/Chloe Grotewold.jpeg" alt="Chloe Grotewold">
         <div class="team-card__body">
           <div class="team-card__name">Chloe Grotewold</div>
-          <div class="team-card__role">Co-Founder</div>
-          <p class="team-card__bio">Chloe co-founded the foundation alongside Iman and Lehlohonolo, driven by a commitment to dignity, care, and empowering young people to lead meaningful community change.</p>
+          <div class="team-card__role">Secretary &amp; Donor Sourcing</div>
+          <p class="team-card__bio" data-bio-full="Chloe Grotewold is a dedicated community advocate and Secretary at Big Little Things Foundation, where she supports the organisation’s administration, donor relationships and fundraising initiatives. She is passionate about creating meaningful opportunities to give back and connecting individuals and businesses with causes where their contributions can make a tangible difference. Based in Johannesburg, Chloe leads Big Little Things’ East Rand and Johannesburg outreach drives, coordinating four community initiatives each year and managing local donation efforts. Through her work, she is committed to strengthening community partnerships, encouraging generosity and helping turn small contributions into meaningful impact.">Chloe Grotewold is a dedicated community advocate and Secretary at Big Little Things Foundation, where she supports the organisation’s administration, donor relationships and fundraising initiatives. She is passionate about creating meaningful opportunities to give back and connecting individuals and businesses with causes where their contributions can make a tangible difference. Based in Johannesburg, Chloe leads Big Little Things’ East Rand and Johannesburg outreach drives, coordinating four community initiatives each year and managing local donation efforts. Through her work, she is committed to strengthening community partnerships, encouraging generosity and helping turn small contributions into meaningful impact.</p>
+          <button class="btn btn-outline btn-sm read-more-btn" type="button" aria-expanded="false">Read more</button>
           <div class="team-card__social">
             <a href="tel:0781626965" class="social-chip">078 162 6965</a>
           </div>
         </div>
       </div>
       <div class="team-card reveal delay-2">
-        <div class="team-card__img team-card__img--icon"><span class="icon icon--xl" data-icon="user"></span></div>
+        <img class="team-card__img" src="public/images/team/Hloni Mgedeza.jpeg" alt="Hloni Mgedeza">
         <div class="team-card__body">
-          <div class="team-card__name">Lehlohonolo Mgedeza</div>
-          <div class="team-card__role">Co-Founder</div>
-          <p class="team-card__bio">Hloni co-founded Big Little Things Foundation and continues to help drive outreach across Gauteng and the Free State, connecting communities with essential support and opportunities.</p>
+          <div class="team-card__name">Hloni Mgedeza</div>
+          <div class="team-card__role">Marketing &amp; Communications</div>
+          <p class="team-card__bio" data-bio-full="Hloni Mgedeza is a passionate creative and community advocate who believes that small acts of kindness can make a big difference. As the Marketing &amp; Communications director at Big Little Things Foundation, she helps share BLT’s story, connect with communities and create awareness around its initiatives. With a background in Somatology, beauty and content creation, Hloni brings her creativity and love for people into her work. She is passionate about giving back, creating meaningful experiences and inspiring others to see the impact that even the little things can make.">Hloni Mgedeza is a passionate creative and community advocate who believes that small acts of kindness can make a big difference. As the Marketing &amp; Communications director at Big Little Things Foundation, she helps share BLT’s story, connect with communities and create awareness around its initiatives. With a background in Somatology, beauty and content creation, Hloni brings her creativity and love for people into her work. She is passionate about giving back, creating meaningful experiences and inspiring others to see the impact that even the little things can make.</p>
+          <button class="btn btn-outline btn-sm read-more-btn" type="button" aria-expanded="false">Read more</button>
           <div class="team-card__social">
             <a href="tel:0810130522" class="social-chip">081 013 0522</a>
           </div>
         </div>
       </div>
-    </div>
-  </div>
-</section>
-
-<!-- PARTNERS -->
-<section class="partners-section">
-  <div class="container">
-    <div style="text-align:center" class="reveal">
-      <p style="font-size:0.82rem;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray-400)">Supported By & Partnered With</p>
-    </div>
-    <div class="partners-bar reveal">
-      <div class="partner-logo">FoodForward SA</div>
-      <div class="partner-logo">Gift of the Givers</div>
-      <div class="partner-logo">DSD Gauteng</div>
-      <div class="partner-logo">NYDA</div>
-      <div class="partner-logo">AngloAmerican CSI</div>
     </div>
   </div>
 </section>
@@ -292,7 +282,7 @@
       <div class="footer__brand">
         <a href="index.html" class="nav__logo"><img src="public/images/logo.png" alt="Big Little Things Foundation" class="nav__logo-img"></a>
         <p>Empowering communities through youth-driven initiatives across South Africa.</p>
-        <div class="footer__social" style="margin-top:20px"><a href="https://www.instagram.com/biglittlethings.foundation?igsi=MTYyMGE0NzBtMTRicQ==" title="Instagram" target="_blank" rel="noopener">ig</a><a href="https://www.tiktok.com/@bltfoundation?_r=1&amp;_t=ZS-999eoTVYr5z" title="TikTok" target="_blank" rel="noopener">tk</a><a href="#" title="LinkedIn">in</a></div>
+        <div class="footer__social" style="margin-top:20px"><a href="https://www.instagram.com/biglittlethings.foundation?igsi=MTYyMGE0NzBtMTRicQ==" title="Instagram" target="_blank" rel="noopener" aria-label="Instagram"><span class="icon" data-icon="instagram" aria-hidden="true"></span></a><a href="https://www.tiktok.com/@bltfoundation?_r=1&amp;_t=ZS-999eoTVYr5z" title="TikTok" target="_blank" rel="noopener" aria-label="TikTok"><span class="icon" data-icon="tiktok" aria-hidden="true"></span></a><a href="http://www.linkedin.com/in/big-little-things-foundation-ab38b5441" title="LinkedIn" target="_blank" rel="noopener" aria-label="LinkedIn"><span class="icon" data-icon="linkedin" aria-hidden="true"></span></a></div>
       </div>
       <div class="footer__col"><h4>Quick Links</h4><ul>
         <li><a href="index.html">Home</a></li><li><a href="about.html">About Us</a></li>
@@ -316,5 +306,22 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="public/js/icons.js"></script>
 <script src="public/js/config.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.read-more-btn').forEach(button => {
+      const bio = button.previousElementSibling;
+      const fullBio = bio?.dataset.bioFull;
+      if (!bio || !fullBio) return;
+      const shortBio = fullBio.length > 180 ? `${fullBio.slice(0, 180).trim()}…` : fullBio;
+      bio.textContent = shortBio;
+      button.addEventListener('click', () => {
+        const expanded = button.getAttribute('aria-expanded') === 'true';
+        bio.textContent = expanded ? shortBio : fullBio;
+        button.textContent = expanded ? 'Read more' : 'Read less';
+        button.setAttribute('aria-expanded', String(!expanded));
+      });
+    });
+  });
+</script>
 </body>
 </html>
