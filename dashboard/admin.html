@@ -336,22 +336,49 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="../public/js/icons.js"></script>
 <script src="../public/js/config.js"></script>
 <script>
+const adminData = { volunteers: [], hours: [], donations: [], events: [], projects: [], stats: {} };
+
 document.addEventListener('DOMContentLoaded', () => {
-  const session = JSON.parse(localStorage.getItem('bltf_session') || 'null');
-  if (!session) { window.location.href = '../login.html'; return; }
-  if (session.role !== 'admin') { window.location.href = 'volunteer.html'; return; }
-  document.getElementById('sidebarName').textContent = session.name || 'Admin';
-  loadOverview();
-  updateBadges();
+  Auth.requireRole('admin').then(async user => {
+    if (!user) return;
+    document.getElementById('sidebarName').textContent = user.name || 'Admin';
+    await refreshAdminData();
+  });
 });
 
+async function refreshAdminData() {
+  try {
+    const [overview, volunteers, hours, donations, events, projects] = await Promise.all([
+      Api.get('/admin/overview'), Api.get('/admin/volunteers'), Api.get('/admin/hours'),
+      Api.get('/admin/donations'), Api.get('/admin/events'), Api.get('/admin/projects')
+    ]);
+    Object.assign(adminData, {
+      stats: overview.stats,
+      volunteers: volunteers.volunteers,
+      hours: hours.hours,
+      donations: donations.donations,
+      events: events.events,
+      projects: projects.projects
+    });
+    loadOverview();
+    updateBadges();
+    renderVolunteers();
+    renderAllHours();
+    renderDonations();
+    renderEvents();
+    renderProjects();
+    renderReports();
+  } catch (error) {
+    Toast.error(error.message);
+  }
+}
+
 function updateBadges() {
-  const pendingVols = DB.get('volunteers').filter(v => v.status === 'pending').length;
-  const pendingHours = DB.get('volunteer_hours').filter(h => h.status === 'pending').length;
+  const pendingVols = adminData.volunteers.filter(v => v.status === 'pending').length;
+  const pendingHours = adminData.hours.filter(h => h.status === 'pending').length;
   const pb = document.getElementById('pendingBadge');
   const hb = document.getElementById('hoursBadge');
   if (pb) pb.textContent = pendingVols > 0 ? pendingVols : '';
@@ -361,32 +388,27 @@ function updateBadges() {
 }
 
 function loadOverview() {
-  const volunteers = DB.get('volunteers');
-  const donations = DB.get('donations');
-  const projects = DB.get('projects');
-  const events = DB.get('events');
-  const allHours = DB.get('volunteer_hours');
+  const volunteers = adminData.volunteers;
+  const donations = adminData.donations;
+  const projects = adminData.projects;
+  const allHours = adminData.hours;
 
-  const moneyDons = donations.filter(d => d.type === 'money').reduce((s,d) => s + (parseFloat(d.amount)||0), 0);
-
-  document.getElementById('statVols').textContent = volunteers.length;
-  document.getElementById('statDons').textContent = 'R' + moneyDons.toLocaleString();
-  document.getElementById('statProjs').textContent = getProjectsByStatus('active').length;
-  document.getElementById('statEvts').textContent = events.length;
+  document.getElementById('statVols').textContent = adminData.stats.volunteers ?? volunteers.length;
+  document.getElementById('statDons').textContent = 'R' + Number(adminData.stats.donations || 0).toLocaleString();
+  document.getElementById('statProjs').textContent = adminData.stats.projects ?? projects.filter(p => p.status === 'active').length;
+  document.getElementById('statEvts').textContent = adminData.stats.events ?? adminData.events.length;
 
   // Pending hours
   const pending = allHours.filter(h => h.status === 'pending');
-  const users = DB.get('users');
   const phTable = document.getElementById('pendingHoursTable');
   if (phTable) {
     if (pending.length === 0) {
       phTable.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--gray-400)">No pending approvals</td></tr>`;
     } else {
       phTable.innerHTML = pending.slice(0,5).map(h => {
-        const user = users.find(u => u.id === h.user_id);
         return `<tr>
-          <td><div style="font-weight:600">${user?.name||'Unknown'}</div></td>
-          <td>${h.event_name}</td>
+          <td><div style="font-weight:600">${h.volunteer_name||'Unknown'}</div></td>
+          <td>${h.event_name || 'Community service'}</td>
           <td><strong>${h.hours}h</strong></td>
           <td>
             <div style="display:flex;gap:6px">
@@ -445,8 +467,8 @@ function loadOverview() {
 
 function renderVolunteers() {
   const filter = document.getElementById('volFilter')?.value || 'all';
-  const volunteers = DB.get('volunteers');
-  const allHours = DB.get('volunteer_hours').filter(h => h.status === 'approved');
+  const volunteers = adminData.volunteers;
+  const allHours = adminData.hours.filter(h => h.status === 'approved');
   const filtered = filter === 'all' ? volunteers : volunteers.filter(v => v.status === filter);
   const tbody = document.getElementById('volunteersTable');
   if (!tbody) return;
@@ -473,8 +495,7 @@ function renderVolunteers() {
 }
 
 function renderAllHours() {
-  const allHours = DB.get('volunteer_hours');
-  const users = DB.get('users');
+  const allHours = adminData.hours;
   const tbody = document.getElementById('allHoursTable');
   if (!tbody) return;
   if (allHours.length === 0) {
@@ -482,10 +503,9 @@ function renderAllHours() {
     return;
   }
   tbody.innerHTML = allHours.slice().reverse().map(h => {
-    const user = users.find(u => u.id === h.user_id);
     return `<tr>
-      <td><strong>${user?.name||'Unknown'}</strong></td>
-      <td>${h.event_name}</td>
+      <td><strong>${h.volunteer_name||'Unknown'}</strong></td>
+      <td>${h.event_name || 'Community service'}</td>
       <td>${fmt.dateShort(h.date)}</td>
       <td><strong>${h.hours}h</strong></td>
       <td><span class="badge badge-${h.status==='approved'?'green':h.status==='rejected'?'red':'orange'}">${h.status}</span></td>
@@ -501,7 +521,7 @@ function renderAllHours() {
 }
 
 function renderDonations() {
-  const donations = DB.get('donations');
+  const donations = adminData.donations;
   const money = donations.filter(d=>d.type==='money').reduce((s,d)=>s+(parseFloat(d.amount)||0),0);
   const items = donations.filter(d=>d.type!=='money').length;
   document.getElementById('totalMoneyDon').textContent = 'R' + money.toLocaleString();
@@ -522,7 +542,7 @@ function renderDonations() {
 }
 
 function renderEvents() {
-  const events = DB.get('events');
+  const events = adminData.events;
   const grid = document.getElementById('eventsAdminGrid');
   if (!grid) return;
   grid.innerHTML = events.length === 0 ? `<div class="empty-state"><div class="empty-state__icon">${Icons.render('calendar', 'icon icon--xl')}</div><p>No events yet. Create one!</p></div>` :
@@ -548,7 +568,7 @@ function renderEvents() {
 }
 
 function renderProjects() {
-  const projects = DB.get('projects');
+  const projects = adminData.projects;
   const grid = document.getElementById('projectsAdminGrid');
   if (!grid) return;
   grid.innerHTML = projects.map(p => {
@@ -576,9 +596,9 @@ function renderProjects() {
 function renderReports() {
   const qs = document.getElementById('quickStats');
   if (!qs) return;
-  const vols = DB.get('volunteers');
-  const hours = DB.get('volunteer_hours').filter(h=>h.status==='approved');
-  const dons = DB.get('donations');
+  const vols = adminData.volunteers;
+  const hours = adminData.hours.filter(h=>h.status==='approved');
+  const dons = adminData.donations;
   const moneyTotal = dons.filter(d=>d.type==='money').reduce((s,d)=>s+(parseFloat(d.amount)||0),0);
   const totalHours = hours.reduce((s,h)=>s+parseFloat(h.hours||0),0);
   qs.innerHTML = `
@@ -591,8 +611,8 @@ function renderReports() {
         ['Total Money Donations', 'R'+moneyTotal.toLocaleString()],
         ['Total Item Donations', dons.filter(d=>d.type!=='money').length],
         ['Total Unique Donors', new Set(dons.map(d=>d.donor_name)).size],
-        ['Active Projects', getProjectsByStatus('active').length],
-        ['Upcoming Events', DB.get('events').length],
+        ['Active Projects', adminData.projects.filter(p=>p.status==='active').length],
+        ['Upcoming Events', adminData.events.length],
       ].map(([label, val]) => `
         <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--gray-200);font-size:0.9rem">
           <span style="color:var(--gray-700)">${label}</span>
@@ -672,57 +692,51 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Actions
-function approveVolunteer(id) {
-  const vols = DB.get('volunteers');
-  const idx = vols.findIndex(v => v.id === id);
-  if (idx === -1) { Toast.error('Volunteer not found.'); return; }
-  vols[idx].status = 'approved';
-  DB.set('volunteers', vols);
-  const users = DB.get('users');
-  const user = users.find(u => u.id === vols[idx].user_id);
-  if (user) { user.status = 'approved'; DB.set('users', users); }
-  Toast.success('Volunteer approved! A confirmation email has been sent.');
-  renderVolunteers(); loadOverview(); updateBadges();
+async function approveVolunteer(id) {
+  try { await Api.put(`/admin/volunteers/${id}/approve`, {}); Toast.success('Volunteer approved.'); await refreshAdminData(); }
+  catch (error) { Toast.error(error.message); }
 }
-function deleteVolunteer(id) {
+async function deleteVolunteer(id) {
   if (!confirm('Remove this volunteer?')) return;
-  const volunteer = DB.get('volunteers').find(v => v.id === id);
-  DB.delete('volunteers', id);
-  if (volunteer?.user_id) DB.delete('users', volunteer.user_id);
-  Toast.info('Volunteer removed.'); renderVolunteers(); loadOverview(); updateBadges();
+  try { await Api.delete(`/admin/volunteers/${id}`); Toast.info('Volunteer removed.'); await refreshAdminData(); }
+  catch (error) { Toast.error(error.message); }
 }
-function approveHours(id) {
-  DB.update('volunteer_hours', id, { status: 'approved' });
-  Toast.success('Hours approved! Volunteer has been notified.'); renderAllHours(); loadOverview(); updateBadges();
+async function approveHours(id) {
+  try { await Api.put(`/admin/hours/${id}/approve`, {}); Toast.success('Hours approved.'); await refreshAdminData(); }
+  catch (error) { Toast.error(error.message); }
 }
-function rejectHours(id) {
-  DB.update('volunteer_hours', id, { status: 'rejected' });
-  Toast.info('Hours rejected.'); renderAllHours(); updateBadges();
+async function rejectHours(id) {
+  try { await Api.put(`/admin/hours/${id}/reject`, {}); Toast.info('Hours rejected.'); await refreshAdminData(); }
+  catch (error) { Toast.error(error.message); }
 }
-function createAdminEvent() {
+async function createAdminEvent() {
   const name = document.getElementById('evName').value.trim();
   const date = document.getElementById('evDate').value;
   const location = document.getElementById('evLocation').value.trim();
   const slotsInput = document.getElementById('evSlots').value.trim();
   const slots = slotsInput === '' ? 30 : parseInt(slotsInput, 10);
   if (!name || !date || !location || !Number.isInteger(slots) || slots < 1) { Toast.error('Enter a name, date, location, and a positive slot count.'); return; }
-  DB.insert('events', { title: name, date, location, slots, filled: 0, description: document.getElementById('evDesc').value });
-  Toast.success('Event created successfully!');
-  Modal.close('addEventModal');
-  renderEvents(); loadOverview();
-  ['evName','evDate','evLocation','evSlots','evDesc'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  try {
+    await Api.post('/admin/events', { name, date, location, slots, description: document.getElementById('evDesc').value });
+    Toast.success('Event created successfully!');
+    Modal.close('addEventModal');
+    ['evName','evDate','evLocation','evSlots','evDesc'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+    await refreshAdminData();
+  } catch (error) { Toast.error(error.message); }
 }
-function deleteEvent(id) {
+async function deleteEvent(id) {
   if (!confirm('Delete this event?')) return;
-  DB.delete('events', id); Toast.info('Event deleted.'); renderEvents(); loadOverview();
+  try { await Api.delete(`/admin/events/${id}`); Toast.info('Event deleted.'); await refreshAdminData(); }
+  catch (error) { Toast.error(error.message); }
 }
-function createProject() {
+async function createProject() {
   const name = document.getElementById('prjName').value.trim();
   const goal = parseInt(document.getElementById('prjGoal').value, 10);
   const endDate = document.getElementById('prjEnd').value;
   if (!name || !Number.isInteger(goal) || goal < 1) { Toast.error('Enter a project name and a positive goal.'); return; }
   if (!endDate) { Toast.error('Enter a project end date.'); return; }
-  DB.insert('projects', {
+  try {
+    await Api.post('/admin/projects', {
     name, goal, collected: 0, unit: document.getElementById('prjUnit').value,
     start_date: document.getElementById('prjStart').value,
     end_date: endDate,
@@ -730,17 +744,19 @@ function createProject() {
     description: document.getElementById('prjDesc').value,
     status: 'active'
   });
-  Toast.success('Project created!'); Modal.close('addProjectModal'); renderProjects(); loadOverview();
+    Toast.success('Project created!'); Modal.close('addProjectModal'); await refreshAdminData();
+  } catch (error) { Toast.error(error.message); }
 }
-function updateProjectProgress(id) {
+async function updateProjectProgress(id) {
   const val = parseInt(document.getElementById('upd_'+id)?.value);
   if (!val || val < 0) { Toast.error('Enter a valid number.'); return; }
-  DB.update('projects', id, { collected: val });
-  Toast.success('Project progress updated!'); renderProjects(); loadOverview();
+  try { await Api.patch(`/admin/projects/${id}`, { collected: val }); Toast.success('Project progress updated!'); await refreshAdminData(); }
+  catch (error) { Toast.error(error.message); }
 }
-function deleteProject(id) {
+async function deleteProject(id) {
   if (!confirm('Delete this project?')) return;
-  DB.delete('projects', id); Toast.info('Project deleted.'); renderProjects(); loadOverview();
+  try { await Api.delete(`/admin/projects/${id}`); Toast.info('Project deleted.'); await refreshAdminData(); }
+  catch (error) { Toast.error(error.message); }
 }
 function showAddDonationModal() { Modal.open('addDonationModal'); }
 function logDonation() {
@@ -753,7 +769,7 @@ function logDonation() {
   Toast.success('Donation logged!'); Modal.close('addDonationModal'); renderDonations(); loadOverview();
 }
 function generateReport(type, format) {
-  Toast.info(`Generating ${type} report as ${format.toUpperCase()}... (Connect Supabase + jsPDF for production exports)`);
+  Toast.info(`Generating ${type} report as ${format.toUpperCase()} is not available yet.`);
 }
 function handleSearch(val) {
   if (!val) return;

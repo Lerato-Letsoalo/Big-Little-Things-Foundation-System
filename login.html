@@ -111,12 +111,6 @@
         Don't have an account? <a href="volunteer.html#register" style="color:var(--red);font-weight:600">Register as Volunteer</a>
       </div>
 
-      <div class="demo-accounts" style="margin-top:24px">
-        <h4><span class="icon icon--inline" data-icon="key"></span> Demo Accounts</h4>
-        <p style="margin-bottom:8px;color:var(--gray-400);font-size:0.78rem">Click to auto-fill for testing:</p>
-        <span class="demo-btn" onclick="fillDemo('admin@biglittlethings.org.za','Admin@2025!')"><span class="icon" data-icon="crown"></span> Admin</span>
-        <span class="demo-btn" onclick="fillDemo('volunteer@biglittlethings.org.za','Vol@2025!')"><span class="icon" data-icon="user"></span> Volunteer</span>
-      </div>
     </div>
 
     <!-- FORGOT TAB -->
@@ -135,37 +129,13 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="public/js/icons.js"></script>
 <script src="public/js/config.js"></script>
 <script>
-// Seed demo users on load
 document.addEventListener('DOMContentLoaded', () => {
-  const users = DB.get('users');
-  if (!users.find(u => u.email === 'admin@biglittlethings.org.za')) {
-    DB.insert('users', { name: 'Admin Director', email: 'admin@biglittlethings.org.za', password_hash: btoa('Admin@2025!'), role: 'admin', status: 'approved' });
-  }
-  if (!users.find(u => u.email === 'volunteer@biglittlethings.org.za')) {
-    DB.insert('users', { name: 'Lerato Dlamini', email: 'volunteer@biglittlethings.org.za', password_hash: btoa('Vol@2025!'), role: 'volunteer', status: 'approved', hours: 12, city: 'Pretoria' });
-  }
-  const demoVolunteer = DB.get('users').find(u => u.email === 'volunteer@biglittlethings.org.za');
-  const demoHours = DB.get('volunteer_hours').filter(h => h.user_id === demoVolunteer?.id && h.status === 'approved');
-  if (demoVolunteer && demoHours.reduce((total, record) => total + Number(record.hours || 0), 0) < 10) {
-    DB.insert('volunteer_hours', { user_id: demoVolunteer.id, event_name: 'Demo Volunteer Service', date: '2026-08-24', hours: 10, location: 'Pretoria', notes: 'Demo certificate example', status: 'approved' });
-  }
-  // Redirect if already logged in as admin, otherwise allow account switching
-  const session = JSON.parse(localStorage.getItem('bltf_session') || 'null');
-  if (session) {
-    if (session.role === 'admin') {
-      window.location.href = 'dashboard/admin.html';
-      return;
-    }
-    const notice = document.getElementById('sessionNotice');
-    if (notice) {
-      notice.style.display = 'block';
-      notice.innerHTML = `You are currently signed in as <strong>${session.name}</strong> (<strong>${session.role}</strong>). <a href="#" onclick="event.preventDefault(); logoutSession()">Sign out to switch accounts</a>.`;
-    }
-  }
+  if (Api.token()) Auth.currentUser().then(user => {
+    window.location.href = user.role === 'admin' ? 'dashboard/admin.html' : 'dashboard/volunteer.html';
+  }).catch(() => Auth.clear());
 });
 
 function switchTab(tab, btn) {
@@ -176,38 +146,33 @@ function switchTab(tab, btn) {
 }
 function switchToForgot() { document.querySelectorAll('.login-tab')[1].click(); }
 
-function fillDemo(email, pass) {
-  document.getElementById('loginEmail').value = email;
-  document.getElementById('loginPass').value = pass;
-  Toast.info('Demo credentials filled. Click Sign In!');
-}
-
 function logoutSession() {
-  localStorage.removeItem('bltf_session');
+  Auth.clear();
   window.location.reload();
 }
 
-function doLogin() {
+async function doLogin() {
   const email = document.getElementById('loginEmail').value.trim().toLowerCase();
   const pass  = document.getElementById('loginPass').value;
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !pass) { Toast.error('Enter a valid email and password.'); return; }
-
-  const users = DB.get('users');
-  const user = users.find(u => u.email.toLowerCase() === email && u.password_hash === btoa(pass));
-
-  if (!user) { Toast.error('Incorrect email or password. Please try again.'); return; }
-
-  localStorage.setItem('bltf_session', JSON.stringify({ id: user.id, name: user.name, role: user.role, email: user.email }));
-  Toast.success(`Welcome back, ${user.name.split(' ')[0]}! Redirecting...`);
-  setTimeout(() => {
-    window.location.href = user.role === 'admin' ? 'dashboard/admin.html' : 'dashboard/volunteer.html';
-  }, 1200);
+  try {
+    const response = await Api.post('/auth/login', { email, password: pass });
+    localStorage.setItem('bltf_token', response.token);
+    localStorage.setItem('bltf_session', JSON.stringify(response.user));
+    Toast.success(`Welcome back, ${response.user.name.split(' ')[0]}!`);
+    window.location.href = response.user.role === 'admin' ? 'dashboard/admin.html' : 'dashboard/volunteer.html';
+  } catch (error) {
+    Toast.error(error.message);
+  }
 }
 
-function doForgot() {
+async function doForgot() {
   const email = document.getElementById('forgotEmail').value.trim();
   if (!email || !email.includes('@')) { Toast.error('Please enter a valid email.'); return; }
-  Toast.success('Password reset link sent! Check your inbox.');
+  try {
+    await Api.post('/auth/forgot-password', { email });
+    Toast.success('If an account matches that address, password reset instructions will be sent.');
+  } catch (error) { Toast.error(error.message); }
 }
 </script>
 </body>

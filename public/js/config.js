@@ -1,51 +1,71 @@
 // =============================================
 //  BIG LITTLE THINGS FOUNDATION
-//  config.js — Supabase + Shared Utilities
+//  config.js — API + Shared Utilities
 // =============================================
 
-// ── Supabase Config ──────────────────────────
-// Replace with your actual Supabase project values
-const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
-const SUPABASE_KEY = 'YOUR_ANON_KEY'; // public anon key only
-
-// Load Supabase from CDN (loaded in HTML before this script)
-let supabaseClient = null;
-if (typeof window !== 'undefined' && window.supabase && !SUPABASE_URL.includes('YOUR_PROJECT') && !SUPABASE_KEY.includes('YOUR_ANON_KEY')) {
-  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-}
-
-// ── Auth Helpers ──────────────────────────────
-const Auth = {
-  async getUser() {
-    if (!supabaseClient) return null;
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    return user;
-  },
-  async getProfile(userId) {
-    const { data } = await supabaseClient.from('users').select('*').eq('id', userId).single();
+const Api = {
+  baseUrl: (window.BLTF_API_BASE || `${window.location.origin}/api`).replace(/\/$/, ''),
+  token() { return localStorage.getItem('bltf_token'); },
+  async request(path, options = {}) {
+    const headers = { Accept: 'application/json', ...options.headers };
+    if (options.body !== undefined) headers['Content-Type'] = 'application/json';
+    const token = this.token();
+    if (token) headers.Authorization = `Bearer ${token}`;
+    let response;
+    try {
+      response = await fetch(`${this.baseUrl}${path}`, {
+        ...options,
+        headers,
+        body: options.body === undefined ? undefined : JSON.stringify(options.body)
+      });
+    } catch (error) {
+      throw new Error('The service is unavailable. Check your connection and try again.');
+    }
+    const data = response.status === 204 ? null : await response.json().catch(() => ({}));
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('bltf_token');
+        localStorage.removeItem('bltf_session');
+      }
+      throw new Error(data?.message || 'The request could not be completed. Try again.');
+    }
     return data;
   },
-  async isAdmin() {
-    const user = await this.getUser();
-    if (!user) return false;
-    const profile = await this.getProfile(user.id);
-    return profile?.role === 'admin';
+  get(path) { return this.request(path); },
+  post(path, body) { return this.request(path, { method: 'POST', body }); },
+  put(path, body) { return this.request(path, { method: 'PUT', body }); },
+  patch(path, body) { return this.request(path, { method: 'PATCH', body }); },
+  delete(path) { return this.request(path, { method: 'DELETE' }); }
+};
+
+const Auth = {
+  clear() {
+    localStorage.removeItem('bltf_token');
+    localStorage.removeItem('bltf_session');
   },
-  async requireAuth(redirectTo = '/login.html') {
-    const user = await this.getUser();
-    if (!user) { window.location.href = redirectTo; return null; }
-    return user;
+  async currentUser() {
+    const data = await Api.get('/auth/me');
+    return data.user;
   },
-  async requireAdmin() {
-    const user = await this.requireAuth('/login.html');
-    if (!user) return null;
-    const isAdmin = await this.isAdmin();
-    if (!isAdmin) { window.location.href = '/dashboard/volunteer.html'; return null; }
-    return user;
+  async requireRole(role, redirectTo = '../login.html') {
+    if (!Api.token()) { window.location.href = redirectTo; return null; }
+    try {
+      const user = await this.currentUser();
+      if (role && user.role !== role) {
+        window.location.href = user.role === 'admin' ? 'admin.html' : 'volunteer.html';
+        return null;
+      }
+      localStorage.setItem('bltf_session', JSON.stringify(user));
+      return user;
+    } catch (error) {
+      this.clear();
+      window.location.href = redirectTo;
+      return null;
+    }
   },
-  async signOut() {
-    if (supabaseClient) await supabaseClient.auth.signOut();
-    window.location.href = '/login.html';
+  signOut(redirectTo = '../login.html') {
+    this.clear();
+    window.location.href = redirectTo;
   }
 };
 
@@ -189,7 +209,7 @@ const Modal = {
 
 // ── Local Storage Fallback (demo mode) ────────
 const DB = {
-  // Simulated DB for demo mode when Supabase not configured
+  // Local storage remains only for non-dashboard public-site features.
   _key: (table) => `bltf_${table}`,
   get(table) {
     try { return JSON.parse(localStorage.getItem(this._key(table))) || []; }
